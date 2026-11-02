@@ -1,0 +1,119 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHero from '../components/PageHero.astro';
+import TestimonialCard from '../components/TestimonialCard.astro';
+import PhotoMarquee from '../components/PhotoMarquee.astro';
+import VideoCard from '../components/VideoCard.astro';
+import CtaBand from '../components/CtaBand.astro';
+import type { Lang } from '../content/types';
+import { testimonials, clientPhotos, videos } from '../content/social-proof';
+import { pathFor } from '../i18n/routes';
+import { t } from '../i18n/ui';
+import { publishable } from '../lib/publish';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const d = t(lang);
+const tt = d.testimonials;
+const crumbs = [
+  { name: d.breadcrumbHome, path: pathFor('home', lang) },
+  { name: d.nav.testimonials, path: pathFor('testimonials', lang) },
+];
+const quotes = publishable(testimonials).sort((a, b) => a.order - b.order);
+const photos = publishable(clientPhotos);
+const stories = publishable(videos).filter((v) => v.kind === 'client-story');
+const title = tt.metaTitle;
+const description = tt.metaDescription;
+---
+
+<Base lang={lang} pageId="testimonials" title={title} description={description} crumbs={crumbs}>
+  <PageHero crumbs={crumbs} crumbLabel={d.breadcrumbAria} title={tt.title} lead={tt.lead} />
+
+  {
+    photos.length > 0 && (
+      <section class="section photos-section" aria-labelledby="photos">
+        <div class="container">
+          <div class="section-head">
+            <h2 id="photos">{tt.photosTitle}</h2>
+            <p>{tt.photosLead}</p>
+          </div>
+        </div>
+        <div class="photos-bleed">
+          <PhotoMarquee photos={photos} lang={lang} label={tt.photosTitle} />
+        </div>
+      </section>
+    )
+  }
+
+  {
+    quotes.length > 0 && (
+      <section class="section section--alt" aria-labelledby="words">
+        <div class="container">
+          <h2 id="words" class="words-title">{d.home.storiesTitle}</h2>
+          <ul class="quotes" role="list">
+            {quotes.map((q) => (
+              <li>
+                <TestimonialCard item={q} lang={lang} />
+              </li>
+            ))}
+          </ul>
+          <p class="individual">{tt.individual}</p>
+        </div>
+      </section>
+    )
+  }
+
+  {
+    stories.length > 0 && (
+      <section class="section" aria-labelledby="stories">
+        <div class="container">
+          <h2 id="stories">{tt.storiesTitle}</h2>
+          <ul class="stories" role="list">
+            {stories.map((v) => (
+              <li>
+                <VideoCard video={v} lang={lang} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+    )
+  }
+
+  <CtaBand lang={lang} title={d.service.ctaTitle} text={d.steps.lead} />
+</Base>
+
+<style>
+  .photos-bleed {
+    padding-inline: var(--gutter);
+    max-width: 1600px;
+    margin-inline: auto;
+  }
+  .words-title {
+    font-size: var(--step-2);
+  }
+  .quotes {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+    gap: 1rem;
+  }
+  .individual,
+  .empty {
+    margin: 1.5rem 0 0;
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+  .stories {
+    list-style: none;
+    margin: 1.5rem 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+    gap: 1rem;
+  }
+</style>

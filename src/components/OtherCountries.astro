@@ -1,0 +1,77 @@
+---
+// Invitation for tourist and study visas to destinations not listed on the site, beside a globe
+// that shows the main destinations.
+import Icon from './Icon.astro';
+import Globe from './Globe.astro';
+import type { Lang } from '../content/types';
+import { contactPath } from '../i18n/routes';
+import { t } from '../i18n/ui';
+import { OTHER_COUNTRY_ID } from '../lib/whatsapp';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const d = t(lang);
+---
+
+<aside class="other" aria-label={d.finder.otherTitle}>
+  <div class="other__globe">
+    <Globe lang={lang} />
+  </div>
+  <div class="other__text">
+    <p class="other__title"><Icon name="globe" size={22} /> {d.finder.otherTitle}</p>
+    <p>{d.finder.otherText}</p>
+    <a class="btn btn--primary" href={contactPath(lang, OTHER_COUNTRY_ID)} data-inquiry>
+      {d.cta.consult}
+      <Icon name="arrowRight" size={18} />
+    </a>
+  </div>
+</aside>
+
+<style>
+  .other {
+    display: grid;
+    grid-template-columns: minmax(0, 300px) 1fr;
+    gap: 1.5rem 2.5rem;
+    align-items: center;
+    margin-top: 1.5rem;
+    padding: 1.5rem 2rem 1.5rem 1.5rem;
+    border-radius: var(--radius-lg);
+    background: var(--sky);
+    border: 1.5px dashed var(--navy);
+  }
+  .other__globe {
+    width: 100%;
+    max-width: 300px;
+  }
+  .other__title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-display);
+    font-weight: 800;
+    color: var(--navy);
+    font-size: 1.25rem;
+    margin: 0 0 0.4rem;
+  }
+  .other__title :global(.icon) {
+    color: var(--red);
+  }
+  .other__text p:not(.other__title) {
+    margin: 0 0 1.25rem;
+    color: var(--ink);
+    max-width: 40rem;
+  }
+  @media (max-width: 767px) {
+    .other {
+      grid-template-columns: 1fr;
+      padding: 1.25rem;
+      text-align: left;
+    }
+    .other__globe {
+      max-width: 270px;
+      justify-self: center;
+    }
+  }
+</style>

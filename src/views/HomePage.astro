@@ -1,0 +1,870 @@
+---
+import { Image } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import ServiceFinder from '../components/ServiceFinder.astro';
+import ServiceCard from '../components/ServiceCard.astro';
+import OtherCountries from '../components/OtherCountries.astro';
+import ContactSteps from '../components/ContactSteps.astro';
+import TestimonialCard from '../components/TestimonialCard.astro';
+import VideoCard from '../components/VideoCard.astro';
+import OfficeInfo from '../components/OfficeInfo.astro';
+import Flag from '../components/Flag.astro';
+import Scripture from '../components/Scripture.astro';
+import portrait from '../assets/photos/fernando-portrait-blue.jpg';
+import officePortrait from '../assets/photos/fernando-portrait-office.jpg';
+import { business } from '../config/business';
+import type { Lang } from '../content/types';
+import { homeServices } from '../content/services/index';
+import { resources } from '../content/resources';
+import { testimonials, videos, clientPhotos } from '../content/social-proof';
+import { leader, team, displayName } from '../content/team';
+import { pathFor, contactPath } from '../i18n/routes';
+import { t, typo } from '../i18n/ui';
+import { publishable } from '../lib/publish';
+import { countryOrder } from '../lib/flags';
+import { OTHER_COUNTRY_ID } from '../lib/whatsapp';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const d = t(lang);
+const h = d.home;
+const quotes = publishable(testimonials).sort((a, b) => a.order - b.order).slice(0, 3);
+const explainers = publishable(videos).filter((v) => v.kind === 'explainer').slice(0, 3);
+const guides = resources.slice(0, 3);
+const approvedPhotos = publishable(clientPhotos);
+const storyPhoto = approvedPhotos.find((p) => p.id === 'embassy-trio');
+// Until written testimonials are approved, the section shows three approved client photos instead.
+const photoStrip = quotes.length ? [] : [storyPhoto, ...approvedPhotos.filter((p) => p !== storyPhoto)].filter((p) => !!p).slice(0, 3);
+const title = h.metaTitle;
+const description = h.metaDescription;
+const reassuranceIcons = { message: 'message', list: 'list', languages: 'languages', users: 'users', calendar: 'calendar' } as const;
+---
+
+<Base lang={lang} pageId="home" title={title} description={description}>
+  <section class="hero">
+    <div class="container hero__grid">
+      <div class="hero__text">
+        <p class="eyebrow hero__eyebrow">{h.eyebrow}</p>
+        <p class="hero__who" aria-hidden="true">
+          <Image src={portrait} alt="" width={112} height={112} class="hero__avatar" loading="eager" />
+          <span><strong>{business.person.fullName}</strong><br />{business.person.title[lang]}</span>
+        </p>
+        <h1 class="hero__title">
+          <span>{h.h1a}</span>
+          {
+            h.h1bShort === h.h1b ? (
+              <span>{h.h1b.replace(/\.$/, '')}<span class="dot">.</span></span>
+            ) : (
+              <>
+                <span class="hero__l2-full">{h.h1b.replace(/\.$/, '')}<span class="dot">.</span></span>
+                <span class="hero__l2-short">{h.h1bShort.replace(/\.$/, '')}<span class="dot">.</span></span>
+              </>
+            )
+          }
+        </h1>
+        <p class="hero__lead">{typo(h.lead, lang)}</p>
+        <ul class="hero__countries" role="list" aria-label={h.countriesLabel}>
+          {
+            countryOrder.map((c) => (
+              <li>
+                <Flag country={c} height={20} loading="eager" />
+                <span>{d.countries[c]}</span>
+              </li>
+            ))
+          }
+          <li class="hero__countries-more">
+            <a href={contactPath(lang, OTHER_COUNTRY_ID)} data-inquiry>
+              <Icon name="globe" size={20} />
+              <span>{h.moreCountries}</span>
+            </a>
+          </li>
+        </ul>
+        <div class="btn-row hero__ctas">
+          <a class="btn btn--primary" href={contactPath(lang)} data-inquiry>
+            {d.cta.consult}
+            <Icon name="arrowRight" size={18} />
+          </a>
+          <a class="btn btn--secondary" href={pathFor('services', lang)}>{d.cta.discover}</a>
+        </div>
+        <ul class="hero__facts">
+          <li><Icon name="calendar" size={18} /> {h.modes}</li>
+          <li>
+            <Icon name="phone" size={18} />
+            <a href={business.phone.tel}>{business.phone.display}</a>
+          </li>
+        </ul>
+      </div>
+
+      <div class="hero__visual">
+        <svg class="hero__route" viewBox="0 0 520 600" aria-hidden="true" focusable="false">
+          <path
+            class="hero__route-path"
+            d="M8 560 C 40 470, 10 380, 70 300 S 190 140, 300 92 S 440 40, 478 30"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-dasharray="1 9"></path>
+          <g class="hero__plane" transform="translate(488 26) rotate(-18)">
+            <path d="M-14 0 L14 0 M2 -9 L8 0 L2 9 M-12 -4 L-9 0 L-12 4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path>
+          </g>
+        </svg>
+        <div class="hero__frame">
+          <Image
+            src={portrait}
+            alt={d.about.portraitAlt}
+            widths={[360, 540, 720, 960]}
+            sizes="(max-width: 899px) 86vw, 460px"
+            loading="eager"
+            fetchpriority="high"
+            class="hero__img"
+          />
+        </div>
+        <div class="hero__tag">
+          <span class="hero__tag-name">{business.person.fullName}</span>
+          <span class="hero__tag-role">{business.person.title[lang]}</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="assure" aria-labelledby="assure-title">
+    <div class="container">
+      <h2 id="assure-title" class="visually-hidden">{h.reassuranceTitle}</h2>
+      <ul class="assure__list">
+        {
+          h.reassurance.map((r) => (
+            <li>
+              <span class="assure__icon">
+                <Icon name={reassuranceIcons[r.icon as keyof typeof reassuranceIcons]} size={22} />
+              </span>
+              <div>
+                <h3>{r.title}</h3>
+                <p>{r.text}</p>
+              </div>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <section class="section section--alt" aria-labelledby="finder-title">
+    <div class="container">
+      <div class="section-head">
+        <h2 id="finder-title">{h.finderTitle}</h2>
+        <p>{h.finderLead}</p>
+      </div>
+      <ServiceFinder lang={lang} id="home-finder" variant="compact" linkToHub />
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="priority-title">
+    <div class="container">
+      <div class="section-head">
+        <h2 id="priority-title">{h.priorityTitle}</h2>
+        <p>{h.priorityLead}</p>
+      </div>
+      <ul class="card-grid card-grid--3" role="list">
+        {homeServices().map((s) => <li data-reveal><ServiceCard service={s} lang={lang} /></li>)}
+      </ul>
+      <OtherCountries lang={lang} />
+      <p class="more-link">
+        <a class="arrow-link" href={pathFor('services', lang)}>{d.nav.allServices} <Icon name="arrowRight" size={18} /></a>
+      </p>
+    </div>
+  </section>
+
+  <section class="section section--navy on-dark person" aria-labelledby="person-title">
+    <div class="container person__grid">
+      <div class="person__media">
+        <Image src={officePortrait} alt={d.about.officePortraitAlt} widths={[360, 560, 760]} sizes="(max-width: 899px) 90vw, 440px" loading="lazy" />
+      </div>
+      <div class="person__text">
+        <p class="eyebrow">{h.teamEyebrow}</p>
+        <h2 id="person-title">{h.aboutTitle}</h2>
+        {h.aboutText.map((p) => <p>{typo(p, lang)}</p>)}
+        <ul class="person__team" role="list">
+          {
+            [leader, ...team].map((m) => (
+              <li>
+                <Image src={m.image} alt="" width={64} height={64} densities={[2]} loading="lazy" class="person__face" />
+                <span>
+                  <strong>{displayName(m)}</strong>
+                  {m.role[lang]}
+                </span>
+              </li>
+            ))
+          }
+        </ul>
+        <a class="btn btn--light" href={pathFor('about', lang)}>{d.cta.aboutFernando} <Icon name="arrowRight" size={18} /></a>
+      </div>
+    </div>
+  </section>
+
+  <ContactSteps lang={lang} />
+
+  {
+    quotes.length === 0 && photoStrip.length > 0 && (
+      <section class="section" aria-labelledby="stories-title">
+        <div class="container">
+          <div class="section-head">
+            <h2 id="stories-title">{h.storiesTitle}</h2>
+            <p>{h.storiesLeadPhotos}</p>
+          </div>
+          <ul class="photo-strip" role="list">
+            {photoStrip.map((p) => (
+              <li>
+                <figure>
+                  <Image src={p!.image} alt={p!.alt[lang]} widths={[360, 540, 720]} sizes="(max-width: 639px) 90vw, (max-width: 1023px) 45vw, 400px" loading="lazy" />
+                  <figcaption>{p!.caption[lang]}</figcaption>
+                </figure>
+              </li>
+            ))}
+          </ul>
+          <p class="more-link">
+            <a class="arrow-link" href={pathFor('testimonials', lang)}>{d.cta.allTestimonials} <Icon name="arrowRight" size={18} /></a>
+          </p>
+        </div>
+      </section>
+    )
+  }
+
+  {
+    quotes.length > 0 && (
+      <section class="section" aria-labelledby="stories-title">
+        <div class="container">
+          <div class="section-head">
+            <h2 id="stories-title">{h.storiesTitle}</h2>
+            <p>{h.storiesLead}</p>
+          </div>
+          <div class:list={['stories', { 'stories--photo': !!storyPhoto }]}>
+            {storyPhoto && (
+              <figure class="stories__photo">
+                <Image src={storyPhoto.image} alt={storyPhoto.alt[lang]} widths={[400, 640, 900]} sizes="(max-width: 899px) 90vw, 520px" loading="lazy" />
+                <figcaption>{storyPhoto.caption[lang]}</figcaption>
+              </figure>
+            )}
+            <ul class="stories__quotes" role="list">
+              {quotes.map((q) => (
+                <li>
+                  <TestimonialCard item={q} lang={lang} showOriginal={false} />
+                </li>
+              ))}
+            </ul>
+          </div>
+          <p class="more-link">
+            <a class="arrow-link" href={pathFor('testimonials', lang)}>{d.cta.allTestimonials} <Icon name="arrowRight" size={18} /></a>
+          </p>
+        </div>
+      </section>
+    )
+  }
+
+  <section class="section section--alt" aria-labelledby="videos-title">
+    <div class="container">
+      <div class="section-head">
+        <h2 id="videos-title">{h.videosTitle}</h2>
+        <p>{h.videosLead}</p>
+      </div>
+      <ul class="card-grid card-grid--3" role="list">
+        {explainers.map((v) => <li><VideoCard video={v} lang={lang} /></li>)}
+      </ul>
+      <ul class="guide-links" role="list">
+        {
+          guides.map((g) => (
+            <li>
+              <a href={pathFor(`resource:${g.id}`, lang)}>
+                <Icon name="book" size={20} />
+                <span>{g[lang].title}</span>
+                <Icon name="arrowRight" size={18} class="guide-links__arrow" />
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+      <p class="more-link">
+        <a class="arrow-link" href={pathFor('resources', lang)}>{d.cta.allResources} <Icon name="arrowRight" size={18} /></a>
+      </p>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="office-title">
+    <div class="container">
+      <div class="section-head">
+        <h2 id="office-title">{h.officeTitle}</h2>
+        <p>{d.office.online}</p>
+      </div>
+      <OfficeInfo lang={lang} />
+      <div class="btn-row office-cta">
+        <a class="btn btn--primary" href={contactPath(lang)} data-inquiry>{d.cta.consult} <Icon name="arrowRight" size={18} /></a>
+        <a class="btn btn--secondary" href={business.whatsapp.base} target="_blank" rel="noopener">
+          <Icon name="whatsapp" size={18} class="icon-wa" />
+          {d.cta.whatsappDirect}
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <Scripture lang={lang} />
+</Base>
+
+<style>
+  /* ---------- Hero ---------- */
+  .hero {
+    position: relative;
+    background:
+      linear-gradient(180deg, var(--warm) 0%, var(--white) 100%);
+    padding-block: clamp(2.5rem, 1.5rem + 4vw, 5.5rem) clamp(3rem, 2rem + 4vw, 6rem);
+    overflow: hidden;
+  }
+  .hero__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    gap: clamp(2rem, 1rem + 4vw, 5rem);
+    align-items: center;
+  }
+  .hero__who {
+    display: none;
+  }
+  @media (max-width: 599px) {
+    .hero__eyebrow {
+      display: none;
+    }
+    .hero__who {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin: 0 0 1.25rem;
+      font-size: 0.925rem;
+      line-height: 1.35;
+      color: var(--muted);
+    }
+    .hero__who strong {
+      color: var(--navy);
+      font-family: var(--font-display);
+      font-size: 1rem;
+    }
+    .hero__who :global(.hero__avatar) {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      object-fit: cover;
+      object-position: 45% 15%;
+      border: 2px solid var(--white);
+      box-shadow: 0 0 0 2px var(--red);
+      flex: none;
+    }
+  }
+  .hero__title {
+    display: grid;
+    gap: 0.1em;
+    font-size: clamp(2.35rem, 1.5rem + 2.9vw, 3.9rem);
+    margin-bottom: 1.5rem;
+  }
+  /* One sentence over two lines, in a single brand navy. */
+  .hero__title,
+  .hero__title > span {
+    color: var(--navy);
+  }
+  /* Phones get the shorter second line so "Un" is never stranded above "accompagnement". */
+  .hero__l2-short {
+    display: none;
+  }
+  @media (max-width: 379px) {
+    .hero__title {
+      font-size: 2.05rem;
+    }
+  }
+  @media (max-width: 599px) {
+    .hero__l2-full {
+      display: none;
+    }
+    .hero__l2-short {
+      display: inline;
+    }
+  }
+  .dot {
+    color: var(--red);
+  }
+  .hero__lead {
+    font-size: clamp(1.125rem, 1rem + 0.4vw, 1.3rem);
+    line-height: 1.55;
+    color: var(--ink);
+    max-width: 36rem;
+    margin-bottom: 1.1rem;
+  }
+  /* Destination list: flag + country, two columns on phones, three from tablets up. */
+  .hero__countries {
+    list-style: none;
+    margin: 0 0 2rem;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+    max-width: 38rem;
+  }
+  .hero__countries li {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-height: 44px;
+    padding: 0.45rem 0.75rem;
+    border-radius: var(--radius-sm);
+    background: var(--white);
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 2px rgb(0 26 61 / 0.05);
+    font-weight: 700;
+    font-size: 0.975rem;
+    line-height: 1.2;
+    color: var(--navy);
+  }
+  .hero__countries .hero__countries-more {
+    padding: 0;
+    border-style: dashed;
+    border-color: var(--navy);
+    background: transparent;
+    box-shadow: none;
+  }
+  .hero__countries-more a {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    min-height: 42px;
+    padding: 0.45rem 0.75rem;
+    color: var(--navy);
+    text-decoration: none;
+  }
+  .hero__countries-more a:hover {
+    background: var(--sky);
+  }
+  .hero__countries-more :global(.icon) {
+    color: var(--red);
+    flex: none;
+  }
+  @media (max-width: 599px) {
+    .hero__countries {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .hero__countries li {
+      font-size: 0.925rem;
+      padding-inline: 0.6rem;
+      gap: 0.5rem;
+    }
+  }
+  .hero__ctas .btn {
+    min-height: 52px;
+    padding-inline: 1.5rem;
+  }
+  .hero__facts {
+    list-style: none;
+    padding: 0;
+    margin: 1.75rem 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.75rem;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .hero__facts li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .hero__facts :global(.icon) {
+    color: var(--red);
+  }
+  .hero__facts a {
+    color: var(--navy);
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .hero__visual {
+    position: relative;
+    justify-self: center;
+    width: min(100%, 460px);
+  }
+  .hero__frame {
+    position: relative;
+    z-index: 1;
+    border-radius: 28px 28px 28px 120px;
+    overflow: hidden;
+    aspect-ratio: 4 / 4.6;
+    background: var(--navy);
+    box-shadow: var(--shadow-lg);
+  }
+  .hero__frame :global(.hero__img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 45% 20%;
+  }
+  .hero__route {
+    position: absolute;
+    z-index: 2;
+    left: -22%;
+    top: -8%;
+    width: 128%;
+    height: 112%;
+    color: var(--red);
+    pointer-events: none;
+    overflow: visible;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .hero__route-path {
+      animation: route-draw 1600ms var(--ease) 200ms both;
+    }
+    .hero__plane {
+      animation: plane-in 500ms var(--ease) 1500ms both;
+    }
+    @keyframes route-draw {
+      from {
+        clip-path: inset(100% 0 0 0);
+      }
+      to {
+        clip-path: inset(0 0 0 0);
+      }
+    }
+    @keyframes plane-in {
+      from {
+        opacity: 0;
+      }
+    }
+  }
+  .hero__tag {
+    position: absolute;
+    z-index: 3;
+    left: -1.5rem;
+    bottom: 1.75rem;
+    display: grid;
+    gap: 0.15rem;
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 0.85rem 1.1rem;
+    box-shadow: var(--shadow);
+    border-left: 3px solid var(--red);
+    max-width: 16rem;
+  }
+  .hero__tag-name {
+    font-family: var(--font-display);
+    font-weight: 800;
+    color: var(--navy);
+    font-size: 1.1rem;
+  }
+  .hero__tag-role {
+    font-size: 0.875rem;
+    color: var(--muted);
+    line-height: 1.35;
+  }
+  @media (max-width: 899px) {
+    .hero__grid {
+      grid-template-columns: 1fr;
+    }
+    .hero__visual {
+      width: min(86%, 400px);
+    }
+    .hero__frame {
+      aspect-ratio: 1 / 1;
+      border-radius: 24px 24px 24px 90px;
+    }
+    .hero__tag {
+      left: -0.75rem;
+      bottom: 1rem;
+    }
+  }
+
+  /* ---------- Reassurance ---------- */
+  .assure {
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    background: var(--white);
+  }
+  .assure__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .assure__list li {
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    gap: 0.9rem;
+    padding: 1.75rem 1.5rem 1.75rem 0;
+  }
+  .assure__list li + li {
+    border-left: 1px solid var(--border);
+    padding-left: 1.5rem;
+  }
+  .assure__icon {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--sky);
+    color: var(--navy);
+  }
+  .assure h3 {
+    font-size: 1.05rem;
+    margin: 0.2rem 0 0.25rem;
+  }
+  .assure p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.975rem;
+    line-height: 1.5;
+  }
+  @media (max-width: 1023px) {
+    .assure__list {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .assure__list li:nth-child(3) {
+      border-left: 0;
+      padding-left: 0;
+    }
+    .assure__list li:nth-child(n + 3) {
+      border-top: 1px solid var(--border);
+    }
+  }
+  @media (max-width: 599px) {
+    .assure__list {
+      grid-template-columns: 1fr;
+    }
+    .assure__list li,
+    .assure__list li + li {
+      border-left: 0;
+      padding: 1.25rem 0;
+    }
+    .assure__list li + li {
+      border-top: 1px solid var(--border);
+    }
+  }
+
+  /* ---------- Grids ---------- */
+  .card-grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+    gap: 1rem;
+  }
+  .card-grid--3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  @media (max-width: 1023px) {
+    .card-grid--3 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 639px) {
+    .card-grid--3 {
+      grid-template-columns: 1fr;
+    }
+  }
+  .more-link {
+    margin: 1.75rem 0 0;
+  }
+
+  /* ---------- Person ---------- */
+  .person__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: clamp(2rem, 1rem + 4vw, 5rem);
+    align-items: center;
+  }
+  .person__media {
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    aspect-ratio: 4 / 5;
+    box-shadow: 0 30px 60px -30px rgb(0 0 0 / 0.6);
+  }
+  .person__media :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 15%;
+  }
+  .person__text p {
+    color: #d4e0ee;
+    font-size: 1.075rem;
+  }
+  .person__team {
+    list-style: none;
+    margin: 1.75rem 0 2rem;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
+    gap: 0.75rem;
+  }
+  .person__team li {
+    display: grid;
+    grid-template-columns: 52px 1fr;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.6rem 0.75rem;
+    border-radius: var(--radius);
+    background: rgb(255 255 255 / 0.06);
+    border: 1px solid rgb(255 255 255 / 0.1);
+  }
+  .person__team li:first-child {
+    border-color: rgb(255 107 110 / 0.55);
+  }
+  .person__team :global(.person__face) {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: 50% 18%;
+    border: 2px solid rgb(255 255 255 / 0.85);
+  }
+  .person__team span {
+    display: grid;
+    font-size: 0.875rem;
+    line-height: 1.3;
+    color: #c4d3e4;
+  }
+  .person__team strong {
+    color: var(--white);
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+  }
+  @media (max-width: 899px) {
+    .person__grid {
+      grid-template-columns: 1fr;
+    }
+    .person__media {
+      max-width: 420px;
+      aspect-ratio: 1 / 1;
+    }
+  }
+
+  /* ---------- Stories ---------- */
+  .stories {
+    display: grid;
+    gap: 1rem;
+  }
+  .stories--photo {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    align-items: stretch;
+  }
+  .stories__photo {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .stories__photo :global(img) {
+    border-radius: var(--radius-lg);
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+    object-fit: cover;
+    object-position: 40% 50%;
+  }
+  .stories__photo figcaption {
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin-top: 0.6rem;
+  }
+  .stories__quotes {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 1rem;
+  }
+  @media (max-width: 899px) {
+    .stories--photo {
+      grid-template-columns: 1fr;
+    }
+    .stories__photo :global(img) {
+      flex: none;
+      aspect-ratio: 4 / 3;
+    }
+  }
+
+  .photo-strip {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+  }
+  .photo-strip figure {
+    margin: 0;
+  }
+  .photo-strip :global(img) {
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    border-radius: var(--radius-lg);
+  }
+  .photo-strip figcaption {
+    margin-top: 0.6rem;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+  @media (max-width: 1023px) {
+    .photo-strip {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .photo-strip li:nth-child(3) {
+      display: none;
+    }
+  }
+  @media (max-width: 639px) {
+    .photo-strip {
+      grid-template-columns: 1fr;
+    }
+    .photo-strip li:nth-child(n + 2) {
+      display: none;
+    }
+  }
+
+  /* ---------- Guides ---------- */
+  .guide-links {
+    list-style: none;
+    padding: 0;
+    margin: 1.75rem 0 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+  }
+  .guide-links a {
+    display: grid;
+    grid-template-columns: 20px 1fr 18px;
+    gap: 0.75rem;
+    align-items: center;
+    min-height: 64px;
+    padding: 0.85rem 1rem;
+    border-radius: var(--radius);
+    background: var(--white);
+    border: 1px solid var(--border);
+    color: var(--navy);
+    font-weight: 600;
+    text-decoration: none;
+    line-height: 1.35;
+  }
+  .guide-links a:hover {
+    border-color: var(--navy);
+  }
+  .guide-links :global(.icon) {
+    color: var(--red);
+  }
+  @media (max-width: 899px) {
+    .guide-links {
+      grid-template-columns: 1fr;
+    }
+  }
+  .office-cta {
+    margin-top: 2rem;
+  }
+</style>

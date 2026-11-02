@@ -1,0 +1,106 @@
+---
+// Closing call to action. Passes a locale-neutral service ID to the inquiry flow when given.
+import Icon from './Icon.astro';
+import { business } from '../config/business';
+import type { Lang } from '../content/types';
+import { contactPath } from '../i18n/routes';
+import { t } from '../i18n/ui';
+interface Props {
+  lang: Lang;
+  title: string;
+  text: string;
+  serviceId?: string;
+}
+const { lang, title, text, serviceId } = Astro.props;
+const d = t(lang);
+---
+
+<section class="cta-band on-dark" aria-label={title}>
+  <div class="container cta-band__inner">
+    <div>
+      <h2>{title}</h2>
+      <p>{text}</p>
+      <p class="cta-band__messaging">{d.messaging}</p>
+    </div>
+    <div class="cta-band__actions">
+      <a class="btn btn--light" href={contactPath(lang, serviceId)} data-inquiry>
+        {d.cta.consult}
+        <Icon name="arrowRight" size={18} />
+      </a>
+      <a class="btn btn--outline-light" href={business.phone.tel}>
+        <Icon name="phone" size={18} />
+        {business.phone.display}
+      </a>
+      <a class="cta-band__wa" href={business.whatsapp.base} target="_blank" rel="noopener">
+        <Icon name="whatsapp" size={18} />
+        {d.cta.whatsappDirect}
+      </a>
+    </div>
+  </div>
+  <svg class="cta-band__path" viewBox="0 0 400 200" aria-hidden="true">
+    <path d="M-10 180 C 120 170, 160 60, 300 70 S 420 20, 420 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2 9" stroke-linecap="round" />
+  </svg>
+</section>
+
+<style>
+  .cta-band {
+    position: relative;
+    overflow: hidden;
+    background: var(--navy);
+    color: #d4e0ee;
+    padding-block: clamp(3rem, 2rem + 3vw, 5rem);
+  }
+  .cta-band__inner {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    gap: 2rem 4rem;
+    align-items: center;
+  }
+  .cta-band h2 {
+    color: var(--white);
+    margin-bottom: 0.5rem;
+  }
+  .cta-band p {
+    margin: 0;
+    font-size: 1.1rem;
+  }
+  .cta-band__messaging {
+    margin-top: 1rem !important;
+    font-size: 0.95rem !important;
+    color: #a9bdd5;
+  }
+  .cta-band__actions {
+    display: grid;
+    gap: 0.75rem;
+    justify-items: stretch;
+  }
+  .cta-band__wa {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    color: var(--white);
+    font-weight: 600;
+  }
+  .cta-band__path {
+    position: absolute;
+    right: -2%;
+    top: 0;
+    width: 46%;
+    height: 100%;
+    color: #ff6b6e;
+    opacity: 0.45;
+  }
+  @media (max-width: 899px) {
+    .cta-band__inner {
+      grid-template-columns: 1fr;
+    }
+    .cta-band__path {
+      width: 90%;
+      opacity: 0.25;
+    }
+  }
+</style>

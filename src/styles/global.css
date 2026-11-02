@@ -1,0 +1,523 @@
+/* Fernando OMG Services — design tokens and base styles.
+   Brand navy and red are sampled from the official logo; the rest are proposed extensions.
+   See docs/DESIGN-SYSTEM.md for usage rules and contrast notes. */
+
+@import '@fontsource-variable/manrope/wght.css';
+@import '@fontsource-variable/source-sans-3/wght.css';
+
+:root {
+  /* Brand */
+  --navy: #00295f;
+  --navy-800: #0a3470;
+  --navy-950: #001a3d;
+  --red: #c11418;
+  --red-700: #9e1013;
+  --white: #ffffff;
+  --warm: #f9f8f6;
+  --sky: #eef4fa;
+  --sky-200: #dbe7f3;
+
+  /* Text and lines */
+  --ink: #172b42;
+  --muted: #526174;
+  --border: #dce4ed;
+  --border-strong: #7a8ca2; /* 3.4:1 on white — form-control and chip boundaries (WCAG 1.4.11) */
+
+  /* Semantic */
+  --surface: var(--white);
+  --surface-alt: var(--warm);
+  --surface-cool: var(--sky);
+  --text: var(--ink);
+  --text-muted: var(--muted);
+  --heading: var(--navy);
+  --cta-bg: var(--red);
+  --cta-bg-hover: var(--red-700);
+  --cta-text: var(--white);
+  --link: var(--navy);
+  --focus: #1b5fd6;
+  --focus-on-dark: #ffffff;
+  --error: #b3261e;
+  --error-bg: #fdf0ef;
+  --success: #1d6b45;
+  --success-bg: #ecf7f0;
+  --whatsapp: #128c4a; /* darker WhatsApp green: 4.6:1 on white, icon accent only */
+
+  /* Type */
+  --font-display: 'Manrope Variable', 'Manrope', system-ui, sans-serif;
+  --font-body: 'Source Sans 3 Variable', 'Source Sans 3', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --step--1: 0.9375rem;
+  --step-0: 1.0625rem;
+  --step-1: 1.25rem;
+  --step-2: clamp(1.375rem, 1.2rem + 0.6vw, 1.625rem);
+  --step-3: clamp(1.75rem, 1.4rem + 1.4vw, 2.5rem);
+  --step-4: clamp(2.25rem, 1.6rem + 2.8vw, 4rem);
+
+  /* Space, shape, depth */
+  --gutter: clamp(1rem, 4vw, 2.5rem);
+  --container: 1240px;
+  --section: clamp(3.5rem, 2.5rem + 4vw, 6.5rem);
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 20px;
+  --shadow-sm: 0 1px 2px rgb(0 26 61 / 0.06), 0 1px 1px rgb(0 26 61 / 0.04);
+  --shadow: 0 10px 30px -12px rgb(0 26 61 / 0.18), 0 2px 6px rgb(0 26 61 / 0.06);
+  --shadow-lg: 0 30px 60px -20px rgb(0 26 61 / 0.28);
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --dur: 200ms;
+  --header-h: 72px;
+  --mobile-bar-h: 0px;
+}
+
+@media (max-width: 767px) {
+  :root {
+    --header-h: 64px;
+    --mobile-bar-h: 68px;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-padding-top: calc(var(--header-h) + 16px);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: var(--step-0);
+  line-height: 1.6;
+  font-optical-sizing: auto;
+  padding-bottom: calc(var(--mobile-bar-h) + env(safe-area-inset-bottom, 0px));
+  overflow-x: hidden;
+}
+
+img,
+svg,
+video {
+  display: block;
+  max-width: 100%;
+}
+
+img {
+  height: auto;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  color: var(--heading);
+  line-height: 1.15;
+  margin: 0 0 0.6em;
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: var(--step-4);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.04;
+}
+
+h2 {
+  font-size: var(--step-3);
+  font-weight: 800;
+  letter-spacing: -0.022em;
+}
+
+h3 {
+  font-size: var(--step-1);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+p {
+  margin: 0 0 1em;
+  text-wrap: pretty;
+}
+
+a {
+  color: var(--link);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
+a:hover {
+  text-decoration-thickness: 2px;
+}
+
+ul,
+ol {
+  padding-left: 1.25em;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.on-dark :focus-visible {
+  outline-color: var(--focus-on-dark);
+}
+
+::selection {
+  background: var(--sky-200);
+  color: var(--navy-950);
+}
+
+/* ---------- Layout helpers ---------- */
+
+.container {
+  width: 100%;
+  max-width: calc(var(--container) + 2 * var(--gutter));
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.narrow {
+  max-width: calc(46rem + 2 * var(--gutter));
+}
+
+.section {
+  padding-block: var(--section);
+}
+
+.section--alt {
+  background: var(--surface-alt);
+}
+
+.section--cool {
+  background: var(--surface-cool);
+}
+
+.section--navy {
+  background: var(--navy);
+  color: #dfe8f3;
+}
+
+.section--navy :is(h2, h3) {
+  color: var(--white);
+}
+
+.section-head {
+  max-width: 44rem;
+  margin-bottom: clamp(2rem, 1.5rem + 1.5vw, 3rem);
+}
+
+.section-head p {
+  color: var(--text-muted);
+  font-size: var(--step-1);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.section--navy .section-head p {
+  color: #c4d3e4;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--step--1);
+  color: var(--navy);
+  margin: 0 0 1rem;
+  letter-spacing: 0.01em;
+}
+
+.eyebrow::before {
+  content: '';
+  width: 1.75rem;
+  height: 2px;
+  background: var(--red);
+  border-radius: 2px;
+  flex: none;
+}
+
+.section--navy .eyebrow {
+  color: #c4d3e4;
+}
+
+.lead {
+  font-size: var(--step-1);
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -100px;
+  z-index: 200;
+  background: var(--navy);
+  color: var(--white);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+}
+
+.skip-link:focus {
+  top: 1rem;
+}
+
+/* ---------- Buttons ---------- */
+
+.btn {
+  --btn-bg: transparent;
+  --btn-fg: var(--navy);
+  --btn-border: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  min-height: 48px;
+  padding: 0.7rem 1.3rem;
+  border-radius: 10px;
+  border: 1.5px solid var(--btn-border);
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease),
+    color var(--dur) var(--ease),
+    transform var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn:hover {
+  text-decoration: none;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn--primary {
+  --btn-bg: var(--cta-bg);
+  --btn-fg: var(--cta-text);
+  box-shadow: 0 6px 16px -8px rgb(193 20 24 / 0.6);
+}
+
+.btn--primary:hover {
+  --btn-bg: var(--cta-bg-hover);
+}
+
+.btn--secondary {
+  --btn-fg: var(--navy);
+  --btn-border: var(--navy);
+  --btn-bg: transparent;
+}
+
+.btn--secondary:hover {
+  --btn-bg: var(--navy);
+  --btn-fg: var(--white);
+}
+
+.btn--light {
+  --btn-bg: var(--white);
+  --btn-fg: var(--navy);
+  --btn-border: var(--white);
+}
+
+.btn--light:hover {
+  --btn-bg: var(--sky);
+}
+
+.btn--outline-light {
+  --btn-fg: var(--white);
+  --btn-border: rgb(255 255 255 / 0.6);
+}
+
+.btn--outline-light:hover {
+  --btn-bg: rgb(255 255 255 / 0.1);
+  --btn-border: var(--white);
+}
+
+.btn--ghost {
+  --btn-fg: var(--navy);
+  padding-inline: 0.5rem;
+}
+
+.btn--ghost:hover {
+  --btn-bg: var(--sky);
+}
+
+.btn--sm {
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9375rem;
+}
+
+.btn--block {
+  width: 100%;
+}
+
+.btn .icon-wa {
+  color: var(--whatsapp);
+}
+
+.btn--primary .icon-wa,
+.btn--outline-light .icon-wa {
+  color: currentColor;
+}
+
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+/* Text link with arrow */
+.arrow-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--navy);
+  text-decoration: none;
+  min-height: 44px;
+}
+
+.arrow-link .icon {
+  transition: transform var(--dur) var(--ease);
+}
+
+.arrow-link:hover .icon {
+  transform: translateX(3px);
+}
+
+.arrow-link:hover {
+  text-decoration: underline;
+}
+
+/* ---------- Cards and lists ---------- */
+
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: clamp(1.25rem, 1rem + 1vw, 1.75rem);
+}
+
+.check-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.check-list li {
+  display: grid;
+  grid-template-columns: 1.5rem 1fr;
+  gap: 0.65rem;
+  align-items: start;
+}
+
+.check-list .icon {
+  color: var(--red);
+  margin-top: 0.2rem;
+}
+
+.prose {
+  max-width: 44rem;
+}
+
+.prose h2 {
+  font-size: var(--step-2);
+  margin-top: 2.25rem;
+}
+
+.prose ul {
+  display: grid;
+  gap: 0.5rem;
+}
+
+/* ---------- Reveal (progressive enhancement) ---------- */
+
+/* Content below the fold rises into place as it scrolls into view (tagged in Base.astro).
+   Without JavaScript, or with reduced motion, everything is simply visible. */
+@media (prefers-reduced-motion: no-preference) {
+  .js [data-reveal] {
+    opacity: 0;
+    transform: translateY(28px);
+    transition:
+      opacity 700ms var(--ease),
+      transform 700ms var(--ease);
+    transition-delay: var(--reveal-delay, 0ms);
+    will-change: opacity, transform;
+  }
+
+  .js [data-reveal='media'] {
+    transform: translateY(20px) scale(0.965);
+  }
+
+  .js [data-reveal='side'] {
+    transform: translateX(-28px);
+  }
+
+  .js [data-reveal].is-visible {
+    opacity: 1;
+    transform: none;
+    will-change: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Draft banner (noindex builds only) */
+.draft-banner {
+  background: #fff6d6;
+  color: #5a4300;
+  font-size: 0.8125rem;
+  text-align: center;
+  padding: 0.3rem 1rem;
+  font-weight: 600;
+}

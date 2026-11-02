@@ -1,0 +1,144 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHero from '../components/PageHero.astro';
+import Icon from '../components/Icon.astro';
+import VideoCard from '../components/VideoCard.astro';
+import CtaBand from '../components/CtaBand.astro';
+import type { Lang } from '../content/types';
+import { resources } from '../content/resources';
+import { videos } from '../content/social-proof';
+import { pathFor } from '../i18n/routes';
+import { t, typo, formatDate } from '../i18n/ui';
+import { publishable } from '../lib/publish';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const d = t(lang);
+const crumbs = [
+  { name: d.breadcrumbHome, path: pathFor('home', lang) },
+  { name: d.resources.breadcrumb, path: pathFor('resources', lang) },
+];
+const title = d.resources.metaTitle;
+const description = d.resources.metaDescription;
+const explainers = publishable(videos).filter((v) => v.kind === 'explainer');
+const words = (r: (typeof resources)[number]) =>
+  r[lang].sections.flatMap((s) => [...(s.paragraphs ?? []), ...(s.list ?? [])]).join(' ').split(/\s+/).length;
+---
+
+<Base lang={lang} pageId="resources" title={title} description={description} crumbs={crumbs}>
+  <PageHero crumbs={crumbs} crumbLabel={d.breadcrumbAria} title={d.resources.title} lead={d.resources.lead} />
+
+  <section class="section" aria-label={d.resources.title}>
+    <div class="container">
+      <ul class="guides" role="list">
+        {
+          resources.map((r) => (
+            <li>
+              <article class="guide">
+                <p class="guide__meta">
+                  <Icon name="book" size={16} /> {d.resources.readingTime(Math.max(2, Math.round(words(r) / 200)))}
+                </p>
+                <h2 class="guide__title">
+                  <a href={pathFor(`resource:${r.id}`, lang)}>{typo(r[lang].title, lang)}</a>
+                </h2>
+                <p>{typo(r[lang].summary, lang)}</p>
+                <p class="guide__date">
+                  {d.resources.reviewed} <time datetime={r.reviewed}>{formatDate(r.reviewed, lang)}</time>
+                </p>
+              </article>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <section class="section section--alt" aria-labelledby="videos">
+    <div class="container">
+      <div class="section-head">
+        <h2 id="videos">{d.home.videosTitle}</h2>
+        <p>{d.home.videosLead}</p>
+      </div>
+      <ul class="videos" role="list">
+        {explainers.map((v) => <li><VideoCard video={v} lang={lang} /></li>)}
+      </ul>
+    </div>
+  </section>
+
+  <CtaBand lang={lang} title={d.resources.ctaTitle} text={d.resources.ctaText} />
+</Base>
+
+<style>
+  .guides {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
+    gap: 1rem;
+  }
+  .guide {
+    position: relative;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    transition:
+      border-color var(--dur) var(--ease),
+      box-shadow var(--dur) var(--ease);
+  }
+  .guide:hover {
+    border-color: var(--navy);
+    box-shadow: var(--shadow);
+  }
+  .guide__meta {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--red-700);
+    margin-bottom: 0.6rem;
+  }
+  .guide__title {
+    font-size: 1.2rem;
+    margin-bottom: 0.6rem;
+  }
+  .guide__title a {
+    color: var(--navy);
+    text-decoration: none;
+  }
+  .guide__title a::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius);
+  }
+  .guide__title a:focus-visible {
+    outline: none;
+  }
+  .guide__title a:focus-visible::after {
+    outline: 3px solid var(--focus);
+    outline-offset: 3px;
+  }
+  .guide p {
+    color: var(--muted);
+  }
+  .guide__date {
+    margin: auto 0 0;
+    font-size: 0.875rem;
+  }
+  .videos {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+    gap: 1rem;
+  }
+</style>

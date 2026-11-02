@@ -1,0 +1,71 @@
+---
+// Native <details> accordions: keyboard accessible and readable without JavaScript.
+import Icon from './Icon.astro';
+import type { Faq, Lang } from '../content/types';
+import { typo } from '../i18n/ui';
+interface Props {
+  faqs: Faq[];
+  lang: Lang;
+}
+const { faqs, lang } = Astro.props;
+---
+
+<div class="faq">
+  {
+    faqs.map((f) => (
+      <details class="faq__item">
+        <summary>
+          <span>{typo(f.q, lang)}</span>
+          <Icon name="chevronDown" size={20} class="faq__chev" />
+        </summary>
+        <div class="faq__answer">
+          <p>{typo(f.a, lang)}</p>
+        </div>
+      </details>
+    ))
+  }
+</div>
+
+<style>
+  .faq {
+    border-top: 1px solid var(--border);
+  }
+  .faq__item {
+    border-bottom: 1px solid var(--border);
+  }
+  summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 56px;
+    padding: 0.9rem 0;
+    cursor: pointer;
+    list-style: none;
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: var(--navy);
+    font-size: 1.05rem;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+  summary:hover span {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+  summary :global(.faq__chev) {
+    flex: none;
+    transition: transform var(--dur) var(--ease);
+    color: var(--red);
+  }
+  details[open] summary :global(.faq__chev) {
+    transform: rotate(180deg);
+  }
+  .faq__answer {
+    padding: 0 2.5rem 1.1rem 0;
+  }
+  .faq__answer p {
+    margin: 0;
+  }
+</style>

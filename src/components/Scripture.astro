@@ -1,0 +1,178 @@
+---
+// Fernand's personal word of faith, folded by default: one verse is visible, and the full message
+// (his note, John 14:1–3 and his closing words) opens on request. Native <details>, so it works
+// without JavaScript and is announced as expandable by screen readers.
+import Icon from './Icon.astro';
+import type { Lang } from '../content/types';
+import { t, typo } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const s = t(lang).home.scripture;
+const [open, close] = lang === 'en' ? ['“', '”'] : ['« ', ' »'];
+---
+
+<section class="scripture" aria-labelledby="scripture-title">
+  <div class="container scripture__inner">
+    <svg class="scripture__path" viewBox="0 0 240 24" aria-hidden="true" focusable="false">
+      <path d="M4 18 C 60 4, 150 4, 220 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="1 7" stroke-linecap="round"></path>
+      <path d="M220 14 l-7 -5 M220 14 l-8 2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+    </svg>
+    <h2 class="scripture__eyebrow" id="scripture-title">{s.eyebrow}</h2>
+    <blockquote class="scripture__verse">
+      <p>{open}{s.highlight}{close}</p>
+      <footer>{s.highlightRef}</footer>
+    </blockquote>
+
+    <details class="scripture__more">
+      <summary>
+        <span class="scripture__open">{s.open}</span>
+        <span class="scripture__close">{s.close}</span>
+        <Icon name="chevronDown" size={18} />
+      </summary>
+      <div class="scripture__body">
+        {s.intro.map((p) => <p>{typo(p, lang)}</p>)}
+        <figure class="scripture__passage">
+          <ol>
+            {s.verses.map((v) => <li>{typo(v, lang)}</li>)}
+          </ol>
+          <figcaption>{s.reference} — {s.version}</figcaption>
+        </figure>
+        <p class="scripture__closing">{typo(s.closing, lang)}</p>
+        <p class="scripture__signature">— {s.signature}</p>
+        {s.credit && <p class="scripture__credit">{s.credit}</p>}
+      </div>
+    </details>
+  </div>
+</section>
+
+<style>
+  .scripture {
+    background: var(--warm);
+    border-top: 1px solid var(--border);
+    padding-block: clamp(2.5rem, 2rem + 2vw, 3.5rem);
+  }
+  .scripture__inner {
+    max-width: 44rem;
+    text-align: center;
+  }
+  .scripture__path {
+    display: block;
+    width: 160px;
+    height: 16px;
+    margin: 0 auto 0.9rem;
+    color: var(--red);
+    opacity: 0.7;
+  }
+  .scripture__eyebrow {
+    font-family: var(--font-body);
+    margin: 0 0 0.6rem;
+    font-size: var(--step--1);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .scripture__verse {
+    margin: 0;
+  }
+  .scripture__verse p {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(1.25rem, 1.05rem + 0.9vw, 1.65rem);
+    line-height: 1.3;
+    color: var(--navy);
+    text-wrap: balance;
+  }
+  .scripture__verse footer {
+    margin-top: 0.4rem;
+    font-size: 0.95rem;
+    color: var(--muted);
+  }
+  .scripture__more {
+    margin-top: 1rem;
+  }
+  .scripture__more summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 44px;
+    padding: 0 0.5rem;
+    font-weight: 700;
+    color: var(--navy);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    text-decoration-color: rgb(193 20 24 / 0.5);
+    cursor: pointer;
+    list-style: none;
+  }
+  .scripture__more summary::-webkit-details-marker {
+    display: none;
+  }
+  .scripture__more summary :global(.icon) {
+    transition: transform var(--dur) var(--ease);
+  }
+  .scripture__more[open] summary :global(.icon) {
+    transform: rotate(180deg);
+  }
+  .scripture__close,
+  .scripture__more[open] .scripture__open {
+    display: none;
+  }
+  .scripture__more[open] .scripture__close {
+    display: inline;
+  }
+  .scripture__body {
+    margin-top: 1rem;
+    padding: 1.5rem clamp(1.1rem, 0.8rem + 1.5vw, 2rem);
+    border-radius: var(--radius-lg);
+    background: var(--white);
+    border: 1px solid var(--border);
+    text-align: left;
+  }
+  .scripture__body p {
+    margin: 0 0 0.9rem;
+  }
+  .scripture__passage {
+    margin: 0 0 1rem;
+    padding: 0.25rem 0 0.25rem 1.1rem;
+    border-left: 3px solid var(--red);
+  }
+  .scripture__passage ol {
+    margin: 0;
+    padding-left: 1.25rem;
+    display: grid;
+    gap: 0.45rem;
+    font-style: italic;
+    color: var(--ink);
+  }
+  .scripture__passage li::marker {
+    font-style: normal;
+    font-weight: 700;
+    color: var(--red);
+  }
+  .scripture__passage figcaption {
+    margin-top: 0.6rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--muted);
+  }
+  .scripture__closing {
+    font-weight: 600;
+    color: var(--navy);
+  }
+  .scripture__signature {
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: var(--navy);
+    text-align: right;
+  }
+  .scripture__body .scripture__credit {
+    margin: 0.75rem 0 0;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+</style>

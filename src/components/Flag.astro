@@ -1,0 +1,29 @@
+---
+// Small 4:3 country flag. Decorative by default (alt=""): the country name is always written next to it.
+import { Image } from 'astro:assets';
+import { flags, type Country } from '../lib/flags';
+
+interface Props {
+  country: Country;
+  /** Rendered height in CSS pixels. */
+  height?: number;
+  alt?: string;
+  class?: string;
+  loading?: 'lazy' | 'eager';
+}
+const { country, height = 18, alt = '', class: className, loading = 'lazy' } = Astro.props;
+const width = Math.round((height * 4) / 3);
+---
+
+<Image src={flags[country]} alt={alt} width={width} height={height} densities={[2, 3]} loading={loading} decoding="async" class:list={['flag', className]} />
+
+<style>
+  .flag {
+    display: inline-block;
+    flex: none;
+    border-radius: 3px;
+    object-fit: cover;
+    box-shadow: 0 0 0 1px rgb(0 26 61 / 0.14);
+    vertical-align: middle;
+  }
+</style>

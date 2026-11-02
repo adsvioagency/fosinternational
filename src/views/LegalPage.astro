@@ -1,0 +1,326 @@
+---
+// Privacy policy and legal information. Both describe the site as actually implemented:
+// static pages, no advertising cookies, no analytics, no server-side form storage, WhatsApp handoff,
+// and one technical language cookie (nf_lang) set only when the visitor picks a language.
+import Base from '../layouts/Base.astro';
+import PageHero from '../components/PageHero.astro';
+import { business, addressLine } from '../config/business';
+import type { Lang } from '../content/types';
+import { pathFor } from '../i18n/routes';
+import { t, typo, formatDate } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+  kind: 'privacy' | 'legal';
+}
+const { lang, kind } = Astro.props;
+const d = t(lang);
+const updated = '2026-10-27';
+const label = kind === 'privacy' ? d.footer.privacy : d.footer.legal;
+const crumbs = [
+  { name: d.breadcrumbHome, path: pathFor('home', lang) },
+  { name: label, path: pathFor(kind, lang) },
+];
+
+type Block = { h: string; p: string[] };
+const email = business.email;
+
+const privacy: Record<Lang, { title: string; description: string; blocks: Block[] }> = {
+  fr: {
+    title: 'Politique de confidentialité',
+    description: 'Comment le site de Fernando OMG Services (FOS) traite vos informations : formulaire préparant un message WhatsApp, sans cookies publicitaires ni suivi.',
+    blocks: [
+      {
+        h: 'En résumé',
+        p: [
+          'Ce site ne crée pas de compte, n’utilise pas de cookies publicitaires et n’intègre pas d’outil de mesure d’audience. Le formulaire de contact ne transmet rien à nos serveurs : il prépare un message que vous choisissez d’envoyer vous-même depuis WhatsApp.',
+        ],
+      },
+      {
+        h: 'Le formulaire de demande',
+        p: [
+          'Les informations que vous saisissez (prénom, nom, numéro de téléphone, service, message et préférence) restent dans votre navigateur pendant que la page est ouverte. Elles ne sont ni enregistrées sur le site, ni stockées dans votre navigateur après fermeture de la page.',
+          'Lorsque vous appuyez sur « Continuer sur WhatsApp », ces informations sont placées dans un message préparé et WhatsApp s’ouvre. Si vous envoyez ce message, l’équipe de Fernando OMG Services (FOS) le reçoit sur WhatsApp. WhatsApp est un service tiers, exploité par WhatsApp/Meta, qui applique sa propre politique de confidentialité.',
+          'Nous vous demandons de ne pas transmettre de documents d’identité, de numéros de dossier ou d’informations financières lors du premier contact.',
+        ],
+      },
+      {
+        h: 'Utilisation de vos informations par l’équipe',
+        p: [
+          'Les messages reçus servent uniquement à répondre à votre demande, à organiser une consultation et à assurer le suivi de vos démarches. Ils ne sont pas vendus ni utilisés à des fins publicitaires.',
+        ],
+      },
+      {
+        h: 'Votre langue',
+        p: [
+          'Lorsque vous arrivez sur l’adresse principale du site, la version française, anglaise ou espagnole s’affiche selon la langue de votre navigateur. Si vous choisissez une langue avec le sélecteur, ce choix est enregistré dans un petit cookie technique (nf_lang) pendant un an, uniquement pour vous afficher la bonne version. Il ne contient aucune information personnelle.',
+          'Le navigateur peut aussi retenir, le temps de votre visite, que vous avez fermé une suggestion de langue ou le message d’aide WhatsApp.',
+        ],
+      },
+      {
+        h: 'Appels, e-mails et liens externes',
+        p: [
+          'Si vous nous appelez ou nous écrivez par e-mail, nous recevons les informations que vous choisissez de partager. Les liens vers TikTok, Facebook, YouTube, Google Maps ou des sites officiels ouvrent des services tiers, soumis à leurs propres règles.',
+        ],
+      },
+      {
+        h: 'Carte et vidéos intégrées',
+        p: [
+          'La carte de l’adresse du bureau est fournie par Google Maps : elle se charge depuis les serveurs de Google lorsque cette partie de la page s’affiche, et Google peut alors recevoir des données techniques (adresse IP, navigateur) et utiliser ses propres cookies.',
+          'Les vidéos affichent une image enregistrée sur notre site. Le lecteur TikTok ne se charge que si vous appuyez sur « Lire la vidéo ici » ; TikTok applique alors ses propres règles de confidentialité.',
+        ],
+      },
+      {
+        h: 'Données techniques',
+        p: [
+          'Les polices et les images sont hébergées avec le site. Comme tout site web, l’hébergeur peut enregistrer des journaux techniques (adresse IP, date, page demandée) pour assurer la sécurité et le bon fonctionnement du service.',
+        ],
+      },
+      {
+        h: 'Vos questions',
+        p: [`Pour toute question sur vos informations ou pour demander la suppression d’un échange, écrivez-nous à ${email} ou contactez-nous au ${business.phone.display}.`],
+      },
+    ],
+  },
+  en: {
+    title: 'Privacy policy',
+    description: 'How the Fernando OMG Services (FOS) website handles your information: a form that prepares a WhatsApp message, with no advertising cookies or tracking.',
+    blocks: [
+      {
+        h: 'In short',
+        p: [
+          'This website does not create accounts, use advertising cookies or include audience-measurement tools. The contact form does not send anything to our servers: it prepares a message that you choose to send yourself from WhatsApp.',
+        ],
+      },
+      {
+        h: 'The inquiry form',
+        p: [
+          'The details you enter (first name, last name, phone number, service, message and preference) stay in your browser while the page is open. They are not saved on the website or stored in your browser after you close the page.',
+          'When you tap “Continue on WhatsApp”, these details are placed in a prepared message and WhatsApp opens. If you send that message, the Fernando OMG Services (FOS) team receives it on WhatsApp. WhatsApp is a third-party service operated by WhatsApp/Meta, which applies its own privacy policy.',
+          'Please do not send identity documents, case numbers or financial information in your first contact.',
+        ],
+      },
+      {
+        h: 'How the team uses your information',
+        p: [
+          'Messages received are used only to answer your request, arrange a consultation and follow up on your procedures. They are not sold or used for advertising.',
+        ],
+      },
+      {
+        h: 'Your language',
+        p: [
+          'When you arrive at the website’s main address, the French, English or Spanish version opens according to your browser’s language. If you choose a language with the language switch, that choice is saved in a small technical cookie (nf_lang) for one year, only to show you the right version. It contains no personal information.',
+          'Your browser may also remember, for the length of your visit, that you closed a language suggestion or the WhatsApp help message.',
+        ],
+      },
+      {
+        h: 'Calls, emails and external links',
+        p: [
+          'If you call or email us, we receive the information you choose to share. Links to TikTok, Facebook, YouTube, Google Maps or official websites open third-party services with their own rules.',
+        ],
+      },
+      {
+        h: 'Embedded map and videos',
+        p: [
+          'The map of the office address is provided by Google Maps: it loads from Google’s servers when that part of the page is displayed, and Google may then receive technical data (IP address, browser) and use its own cookies.',
+          'Videos show a picture stored on our website. The TikTok player loads only if you tap “Play the video here”; TikTok then applies its own privacy rules.',
+        ],
+      },
+      {
+        h: 'Technical data',
+        p: [
+          'Fonts and images are hosted with the website. As with any website, the hosting provider may keep technical logs (IP address, date, page requested) for security and reliable operation.',
+        ],
+      },
+      {
+        h: 'Your questions',
+        p: [`For any question about your information, or to ask us to delete a conversation, email ${email} or call ${business.phone.display}.`],
+      },
+    ],
+  },
+  es: {
+    title: 'Política de privacidad',
+    description: 'Cómo trata sus datos el sitio de Fernando OMG Services (FOS): un formulario que prepara un mensaje de WhatsApp, sin cookies publicitarias ni seguimiento.',
+    blocks: [
+      {
+        h: 'En resumen',
+        p: [
+          'Este sitio no crea cuentas, no usa cookies publicitarias y no incluye herramientas de medición de audiencia. El formulario de contacto no envía nada a nuestros servidores: prepara un mensaje que usted decide enviar desde WhatsApp.',
+        ],
+      },
+      {
+        h: 'El formulario de solicitud',
+        p: [
+          'Los datos que escribe (nombre, apellido, número de teléfono, servicio, mensaje y preferencia) se quedan en su navegador mientras la página está abierta. No se guardan en el sitio ni en su navegador después de cerrar la página.',
+          'Cuando toca «Continuar en WhatsApp», esos datos se colocan en un mensaje preparado y se abre WhatsApp. Si envía ese mensaje, el equipo de Fernando OMG Services (FOS) lo recibe por WhatsApp. WhatsApp es un servicio de terceros, operado por WhatsApp/Meta, que aplica su propia política de privacidad.',
+          'Le pedimos que no envíe documentos de identidad, números de caso ni información financiera en el primer contacto.',
+        ],
+      },
+      {
+        h: 'Cómo usa el equipo su información',
+        p: [
+          'Los mensajes recibidos se usan únicamente para responder a su solicitud, organizar una consulta y dar seguimiento a sus trámites. No se venden ni se usan con fines publicitarios.',
+        ],
+      },
+      {
+        h: 'Su idioma',
+        p: [
+          'Cuando entra a la dirección principal del sitio, se abre la versión en francés, inglés o español según el idioma de su navegador. Si elige un idioma con el selector, esa elección se guarda durante un año en una pequeña cookie técnica (nf_lang), solo para mostrarle la versión correcta. No contiene ningún dato personal.',
+          'Su navegador también puede recordar, mientras dure su visita, que usted cerró una sugerencia de idioma o el mensaje de ayuda de WhatsApp.',
+        ],
+      },
+      {
+        h: 'Llamadas, correos y enlaces externos',
+        p: [
+          'Si nos llama o nos escribe por correo electrónico, recibimos la información que usted decida compartir. Los enlaces a TikTok, Facebook, YouTube, Google Maps o sitios oficiales abren servicios de terceros, con sus propias reglas.',
+        ],
+      },
+      {
+        h: 'Mapa y videos integrados',
+        p: [
+          'El mapa con la dirección de la oficina lo proporciona Google Maps: se carga desde los servidores de Google cuando esa parte de la página aparece en pantalla, y Google puede recibir datos técnicos (dirección IP, navegador) y usar sus propias cookies.',
+          'Los videos muestran una imagen guardada en nuestro sitio. El reproductor de TikTok solo se carga si usted toca «Ver el video aquí»; en ese momento, TikTok aplica sus propias reglas de privacidad.',
+        ],
+      },
+      {
+        h: 'Datos técnicos',
+        p: [
+          'Las fuentes y las imágenes están alojadas junto con el sitio. Como en cualquier sitio web, el proveedor de alojamiento puede guardar registros técnicos (dirección IP, fecha, página solicitada) por seguridad y para el buen funcionamiento del servicio.',
+        ],
+      },
+      {
+        h: 'Sus preguntas',
+        p: [`Si tiene preguntas sobre sus datos o quiere pedir que borremos una conversación, escríbanos a ${email} o llámenos al ${business.phone.display}.`],
+      },
+    ],
+  },
+};
+
+const legal: Record<Lang, { title: string; description: string; blocks: Block[] }> = {
+  fr: {
+    title: 'Mentions légales',
+    description: 'Informations légales du site Fernando OMG Services (FOS) : éditeur, contact, nature des services et propriété des contenus.',
+    blocks: [
+      {
+        h: 'Éditeur du site',
+        p: [`${business.name} (${business.acronym})`, addressLine('fr'), `Téléphone : ${business.phone.display} · E-mail : ${email}`],
+      },
+      {
+        h: 'Hébergement',
+        p: ['Netlify, Inc., San Francisco (États-Unis) — netlify.com'],
+      },
+      {
+        h: 'Nature des services',
+        p: [
+          'Fernando OMG Services (FOS) propose des services de consultation, de préparation et d’organisation de documents, d’interprétation et d’accompagnement. Nous ne sommes ni une administration, ni une ambassade, ni un organisme affilié à un gouvernement. Nous ne délivrons aucun visa, permis ou document officiel, et les décisions relèvent exclusivement des autorités compétentes.',
+          'Les informations publiées sur ce site sont générales et ne constituent pas un avis juridique. Elles sont vérifiées à la date indiquée sur chaque page et peuvent évoluer.',
+        ],
+      },
+      {
+        h: 'Propriété des contenus',
+        p: [
+          'Le logo, les textes et les photographies de ce site appartiennent à Fernando OMG Services (FOS) ou à leurs auteurs respectifs. Toute reproduction nécessite une autorisation préalable.',
+        ],
+      },
+      {
+        h: 'Liens externes',
+        p: ['Les liens vers des sites officiels ou des réseaux sociaux sont fournis pour information. Nous ne sommes pas responsables de leur contenu.'],
+      },
+    ],
+  },
+  en: {
+    title: 'Legal information',
+    description: 'Legal information for the Fernando OMG Services (FOS) website: publisher, contact, nature of services and content ownership.',
+    blocks: [
+      {
+        h: 'Website publisher',
+        p: [`${business.name} (${business.acronym})`, addressLine('en'), `Phone: ${business.phone.display} · Email: ${email}`],
+      },
+      {
+        h: 'Hosting',
+        p: ['Netlify, Inc., San Francisco (United States) — netlify.com'],
+      },
+      {
+        h: 'Nature of services',
+        p: [
+          'Fernando OMG Services (FOS) provides consultation, document preparation and organisation, interpreting and support services. We are not a government office, an embassy or an organisation affiliated with any government. We do not issue visas, permits or official documents, and decisions rest solely with the competent authorities.',
+          'The information on this website is general and does not constitute legal advice. It is reviewed on the date shown on each page and may change.',
+        ],
+      },
+      {
+        h: 'Content ownership',
+        p: [
+          'The logo, text and photographs on this website belong to Fernando OMG Services (FOS) or to their respective authors. Any reproduction requires prior permission.',
+        ],
+      },
+      {
+        h: 'External links',
+        p: ['Links to official websites or social networks are provided for information. We are not responsible for their content.'],
+      },
+    ],
+  },
+  es: {
+    title: 'Aviso legal',
+    description: 'Información legal del sitio de Fernando OMG Services (FOS): responsable, contacto, naturaleza de los servicios y propiedad de los contenidos.',
+    blocks: [
+      {
+        h: 'Responsable del sitio',
+        p: [`${business.name} (${business.acronym})`, addressLine('es'), `Teléfono: ${business.phone.display} · Correo: ${email}`],
+      },
+      {
+        h: 'Alojamiento',
+        p: ['Netlify, Inc., San Francisco (Estados Unidos) — netlify.com'],
+      },
+      {
+        h: 'Naturaleza de los servicios',
+        p: [
+          'Fernando OMG Services (FOS) ofrece servicios de consultoría, preparación y organización de documentos, interpretación y acompañamiento. No somos una oficina pública, ni una embajada, ni un organismo afiliado a un gobierno. No otorgamos visas, permisos ni documentos oficiales, y las decisiones corresponden exclusivamente a las autoridades competentes.',
+          'La información publicada en este sitio es general y no constituye asesoría legal. Se verifica en la fecha indicada en cada página y puede cambiar.',
+        ],
+      },
+      {
+        h: 'Propiedad de los contenidos',
+        p: [
+          'El logo, los textos y las fotografías de este sitio pertenecen a Fernando OMG Services (FOS) o a sus respectivos autores. Cualquier reproducción requiere autorización previa.',
+        ],
+      },
+      {
+        h: 'Enlaces externos',
+        p: ['Los enlaces a sitios oficiales o redes sociales se ofrecen a título informativo. No somos responsables de su contenido.'],
+      },
+    ],
+  },
+};
+
+const page = (kind === 'privacy' ? privacy : legal)[lang];
+---
+
+<Base lang={lang} pageId={kind} title={page.title} description={page.description} crumbs={crumbs}>
+  <PageHero crumbs={crumbs} crumbLabel={d.breadcrumbAria} title={page.title} />
+  <div class="container section">
+    <div class="prose">
+      {
+        page.blocks.map((b) => (
+          <section>
+            <h2>{b.h}</h2>
+            {b.p.map((p) => <p>{typo(p, lang)}</p>)}
+          </section>
+        ))
+      }
+      <p class="updated">{d.updated}{d.sep}<time datetime={updated}>{formatDate(updated, lang)}</time></p>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .prose section:first-child h2 {
+    margin-top: 0;
+  }
+  .updated {
+    color: var(--muted);
+    font-size: 0.9rem;
+    border-top: 1px solid var(--border);
+    padding-top: 1rem;
+    margin-top: 2rem;
+  }
+</style>

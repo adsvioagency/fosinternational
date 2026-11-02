@@ -1,0 +1,132 @@
+---
+// Inner-page header band: breadcrumbs, eyebrow, H1, lead, optional actions and aside.
+import Breadcrumbs from './Breadcrumbs.astro';
+import Flag from './Flag.astro';
+import type { Crumb } from '../lib/seo';
+import type { Country } from '../lib/flags';
+interface Props {
+  crumbs: Crumb[];
+  crumbLabel: string;
+  eyebrow?: string;
+  title: string;
+  lead?: string;
+  tone?: 'warm' | 'cool';
+  /** Country flags shown in the eyebrow and, on wide screens, as a large card beside the title. */
+  flags?: Country[];
+}
+const { crumbs, crumbLabel, eyebrow, title, lead, tone = 'warm', flags = [] } = Astro.props;
+const hasAside = Astro.slots.has('aside') || flags.length > 0;
+---
+
+<section class:list={['page-hero', `page-hero--${tone}`]}>
+  <div class:list={['container', 'page-hero__inner', { 'has-aside': hasAside }]}>
+    <div class="page-hero__text">
+      <Breadcrumbs crumbs={crumbs} label={crumbLabel} />
+      {
+        eyebrow && (
+          <p class:list={['eyebrow', { 'eyebrow--flag': flags.length > 0 }]}>
+            {flags.map((c) => <Flag country={c} height={20} loading="eager" />)}
+            {eyebrow}
+          </p>
+        )
+      }
+      <h1>{title}</h1>
+      {lead && <p class="lead">{lead}</p>}
+      <slot />
+    </div>
+    {
+      hasAside && (
+        <div class="page-hero__aside">
+          {flags.length > 0 ? (
+            <div class:list={['flag-card', { 'flag-card--many': flags.length > 1 }]} aria-hidden="true">
+              {flags.map((c) => <Flag country={c} height={flags.length > 1 ? 96 : 150} loading="eager" class="flag-card__flag" />)}
+            </div>
+          ) : (
+            <slot name="aside" />
+          )}
+        </div>
+      )
+    }
+  </div>
+  <svg class="page-hero__path" viewBox="0 0 600 120" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0 96 C 160 96, 220 30, 380 40 S 560 20, 600 8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2 9" stroke-linecap="round" />
+  </svg>
+</section>
+
+<style>
+  .page-hero {
+    position: relative;
+    padding-block: clamp(2rem, 1.5rem + 2vw, 3rem) clamp(2.5rem, 2rem + 3vw, 4.5rem);
+    overflow: hidden;
+  }
+  .page-hero--warm {
+    background: var(--warm);
+  }
+  .page-hero--cool {
+    background: var(--sky);
+  }
+  .page-hero__inner {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    gap: 2.5rem;
+  }
+  .page-hero__inner.has-aside {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    align-items: center;
+  }
+  .page-hero__text {
+    max-width: 48rem;
+  }
+  .page-hero h1 {
+    font-size: clamp(2rem, 1.5rem + 2.2vw, 3.25rem);
+  }
+  .page-hero .lead {
+    margin-bottom: 0;
+  }
+  .page-hero__path {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: min(60%, 640px);
+    height: 120px;
+    color: var(--red);
+    opacity: 0.55;
+  }
+  .eyebrow--flag::before {
+    display: none;
+  }
+  /* Large flag "sticker" beside a country service page title. */
+  .flag-card {
+    justify-self: center;
+    display: flex;
+    gap: 1rem;
+    padding: 14px;
+    border-radius: 18px;
+    background: var(--white);
+    box-shadow: var(--shadow-lg);
+    transform: rotate(-4deg);
+  }
+  .flag-card :global(.flag-card__flag) {
+    border-radius: 8px;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .flag-card {
+      animation: flag-in 700ms var(--ease) 150ms both;
+    }
+    @keyframes flag-in {
+      from {
+        opacity: 0;
+        transform: rotate(-10deg) translateY(12px) scale(0.94);
+      }
+    }
+  }
+  @media (max-width: 899px) {
+    .page-hero__inner.has-aside {
+      grid-template-columns: 1fr;
+    }
+    .page-hero__aside:has(.flag-card) {
+      display: none;
+    }
+  }
+</style>

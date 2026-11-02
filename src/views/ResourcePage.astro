@@ -1,0 +1,188 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHero from '../components/PageHero.astro';
+import Icon from '../components/Icon.astro';
+import UsNotice from '../components/UsNotice.astro';
+import ServiceCard from '../components/ServiceCard.astro';
+import CtaBand from '../components/CtaBand.astro';
+import type { Lang, Resource, Service } from '../content/types';
+import { serviceById } from '../content/services/index';
+import { pathFor, contactPath, type PageId } from '../i18n/routes';
+import { t, typo, formatDate } from '../i18n/ui';
+import { abs, articleNode } from '../lib/seo';
+
+interface Props {
+  lang: Lang;
+  resource: Resource;
+}
+const { lang, resource } = Astro.props;
+const d = t(lang);
+const r = resource[lang];
+const pageId = `resource:${resource.id}` as PageId;
+const crumbs = [
+  { name: d.breadcrumbHome, path: pathFor('home', lang) },
+  { name: d.resources.breadcrumb, path: pathFor('resources', lang) },
+  { name: r.title, path: pathFor(pageId, lang) },
+];
+const related = resource.relatedServices.map((id) => serviceById.get(id)).filter((s): s is Service => !!s);
+const schema = [
+  articleNode({ pageId, lang, headline: r.title, description: r.metaDescription, dateModified: resource.reviewed, image: abs('/og-default.jpg') }),
+];
+const primary = related[0];
+---
+
+<Base lang={lang} pageId={pageId} title={r.metaTitle} description={r.metaDescription} crumbs={crumbs} schema={schema} ogType="article">
+  <PageHero crumbs={crumbs} crumbLabel={d.breadcrumbAria} eyebrow={d.resources.title} title={typo(r.title, lang)}>
+    <p class="meta">
+      <Icon name="calendar" size={16} />
+      {d.resources.reviewed} <time datetime={resource.reviewed}>{formatDate(resource.reviewed, lang)}</time>
+    </p>
+  </PageHero>
+
+  <div class="container article-wrap">
+    <article class="prose article">
+      <div class="summary">
+        <p class="summary__label">{d.resources.summary}</p>
+        <p>{typo(r.summary, lang)}</p>
+      </div>
+
+      {resource.usRestrictionNotice && <UsNotice lang={lang} />}
+
+      {
+        r.sections.map((s) => (
+          <section>
+            <h2>{typo(s.heading, lang)}</h2>
+            {s.paragraphs?.map((p) => <p>{typo(p, lang)}</p>)}
+            {s.list && (
+              <ul class="check-list">
+                {s.list.map((x) => (
+                  <li>
+                    <Icon name="check" size={18} />
+                    <span>{typo(x, lang)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        ))
+      }
+
+      <section class="next">
+        <h2>{d.resources.nextSteps}</h2>
+        <ol>
+          {r.nextSteps.map((x) => <li>{typo(x, lang)}</li>)}
+        </ol>
+        {
+          primary && (
+            <a class="btn btn--primary" href={contactPath(lang, primary.id)} data-inquiry>
+              {d.cta.consult} <Icon name="arrowRight" size={18} />
+            </a>
+          )
+        }
+      </section>
+
+      {
+        resource.sources.length > 0 && (
+          <section class="sources">
+            <h2>{d.resources.sources}</h2>
+            <ul>
+              {resource.sources.map((s) => (
+                <li>
+                  <a href={s.url} target="_blank" rel="noopener">
+                    {s.label} <Icon name="arrowUpRight" size={16} />
+                    <span class="visually-hidden">{d.videos.external}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      }
+      <p class="general">{d.general}</p>
+    </article>
+  </div>
+
+  <section class="section section--alt" aria-labelledby="rel">
+    <div class="container">
+      <h2 id="rel" class="rel-title">{d.resources.related}</h2>
+      <ul class="rel" role="list">
+        {related.map((s) => <li><ServiceCard service={s} lang={lang} /></li>)}
+      </ul>
+    </div>
+  </section>
+
+  <CtaBand lang={lang} title={d.resources.ctaTitle} text={d.resources.ctaText} serviceId={primary?.id} />
+</Base>
+
+<style>
+  .meta {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--muted);
+    font-size: 0.95rem;
+    margin: 0;
+  }
+  .article-wrap {
+    padding-block: clamp(2.5rem, 2rem + 2vw, 4rem);
+  }
+  .article {
+    margin-inline: auto;
+    max-width: 44rem;
+  }
+  .summary {
+    background: var(--sky);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .summary__label {
+    font-family: var(--font-display);
+    font-weight: 800;
+    color: var(--navy);
+    margin-bottom: 0.35rem;
+  }
+  .summary p:last-child {
+    margin: 0;
+    font-size: 1.1rem;
+  }
+  .next {
+    margin-top: 2.5rem;
+    border-top: 1px solid var(--border);
+    padding-top: 0.5rem;
+  }
+  .next ol {
+    margin-bottom: 1.5rem;
+    display: grid;
+    gap: 0.4rem;
+  }
+  .sources ul {
+    list-style: none;
+    padding: 0;
+  }
+  .sources a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 40px;
+    font-weight: 600;
+  }
+  .general {
+    margin-top: 2rem;
+    font-size: 0.95rem;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    padding-top: 1rem;
+  }
+  .rel-title {
+    font-size: var(--step-2);
+  }
+  .rel {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+    gap: 1rem;
+  }
+</style>

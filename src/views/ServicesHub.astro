@@ -1,0 +1,103 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHero from '../components/PageHero.astro';
+import ServiceFinder from '../components/ServiceFinder.astro';
+import OtherCountries from '../components/OtherCountries.astro';
+import ContactSteps from '../components/ContactSteps.astro';
+import CtaBand from '../components/CtaBand.astro';
+import type { Lang } from '../content/types';
+import { groupOrder, servicesByGroup } from '../content/services/index';
+import { pathFor } from '../i18n/routes';
+import { t } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const d = t(lang);
+const crumbs = [
+  { name: d.breadcrumbHome, path: pathFor('home', lang) },
+  { name: d.service.breadcrumb, path: pathFor('services', lang) },
+];
+const title = d.service.hubMetaTitle;
+const description = d.service.hubMetaDescription;
+---
+
+<Base lang={lang} pageId="services" title={title} description={description} crumbs={crumbs}>
+  <PageHero crumbs={crumbs} crumbLabel={d.breadcrumbAria} title={d.service.hubTitle} lead={d.service.hubLead} tone="cool" />
+
+  <section class="section" aria-label={d.home.finderTitle}>
+    <div class="container">
+      <ServiceFinder lang={lang} id="hub-finder" cardHeading="h3" />
+      <OtherCountries lang={lang} />
+    </div>
+  </section>
+
+  <section class="section section--alt" aria-labelledby="by-group">
+    <div class="container">
+      <h2 id="by-group">{d.service.hubAllTitle}</h2>
+      <div class="groups">
+        {
+          groupOrder.map((g) => (
+            <div class="group">
+              <h3>{d.groups[g]}</h3>
+              <ul>
+                {servicesByGroup(g).map((s) => (
+                  <li>
+                    <a href={pathFor(`service:${s.id}`, lang)}>{s[lang].label}</a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))
+        }
+      </div>
+      <p class="hub-note">{d.service.hubDisclaimer}</p>
+    </div>
+  </section>
+
+  <ContactSteps lang={lang} />
+  <CtaBand lang={lang} title={d.service.ctaTitle} text={d.steps.lead} />
+</Base>
+
+<style>
+  .groups {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
+  }
+  .group h3 {
+    font-size: 1.05rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 2px solid var(--red);
+    width: fit-content;
+  }
+  .group ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .group a {
+    display: flex;
+    align-items: center;
+    min-height: 40px;
+    line-height: 1.35;
+    padding-block: 0.2rem;
+  }
+  .hub-note {
+    margin: 2.5rem 0 0;
+    font-size: 0.95rem;
+    color: var(--muted);
+    max-width: 52rem;
+  }
+  @media (max-width: 1023px) {
+    .groups {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 599px) {
+    .groups {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

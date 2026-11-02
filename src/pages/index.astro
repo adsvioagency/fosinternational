@@ -1,0 +1,43 @@
+---
+// The root opens the visitor's language. On Netlify, public/_redirects does this on the server
+// (Accept-Language, or the nf_lang cookie from the language switch); this page is the static
+// fallback for other hosts: it picks the same language in the browser, or French without JavaScript.
+import { langNames } from '../i18n/ui';
+---
+
+<!doctype html>
+<html lang="fr" translate="no">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Fernando OMG Services (FOS)</title>
+    <meta name="robots" content="noindex" />
+    <meta name="google" content="notranslate" />
+    <script is:inline>
+      (function () {
+        var supported = { fr: 1, en: 1, es: 1 };
+        var m = document.cookie.match(/(?:^|;\s*)nf_lang=(fr|en|es)/);
+        var lang = m ? m[1] : null;
+        if (!lang) {
+          var prefs = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || 'fr'];
+          for (var i = 0; i < prefs.length && !lang; i++) {
+            var base = String(prefs[i]).toLowerCase().split('-')[0];
+            if (base === 'ht') base = 'fr';
+            if (supported[base]) lang = base;
+          }
+        }
+        location.replace('/' + (lang || 'fr') + '/');
+      })();
+    </script>
+    <noscript><meta http-equiv="refresh" content="0; url=/fr/" /></noscript>
+    <link rel="canonical" href="/fr/" />
+  </head>
+  <body>
+    <p>
+      Fernando OMG Services (FOS) —
+      <a href="/fr/" lang="fr">{langNames.fr.name}</a> ·
+      <a href="/en/" lang="en">{langNames.en.name}</a> ·
+      <a href="/es/" lang="es">{langNames.es.name}</a>
+    </p>
+  </body>
+</html>

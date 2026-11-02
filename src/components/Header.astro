@@ -1,0 +1,713 @@
+---
+import { Image } from 'astro:assets';
+import Icon from './Icon.astro';
+import LangSwitch from './LangSwitch.astro';
+import emblem from '../assets/photos/logo-emblem.png';
+import { business } from '../config/business';
+import type { Lang } from '../content/types';
+import { groupOrder, servicesByGroup } from '../content/services/index';
+import { pathFor, contactPath, type PageId } from '../i18n/routes';
+import { t } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+  pageId: PageId;
+}
+const { lang, pageId } = Astro.props;
+const d = t(lang);
+// On a service page, generic consultation buttons preselect that service.
+const contextService = pageId.startsWith("service:") ? pageId.slice(8) : undefined;
+// Items of the scrolling information strip at the very top.
+const tickerItems = [
+  { icon: 'clock', text: d.utility.officeHours },
+  { icon: 'calendar', text: d.utility.experience },
+  { icon: 'devices', text: d.utility.modes },
+] as const;
+
+const links: { id: PageId; label: string }[] = [
+  { id: 'home', label: d.nav.home },
+  { id: 'about', label: d.nav.about },
+  { id: 'resources', label: d.nav.resources },
+  { id: 'testimonials', label: d.nav.testimonials },
+  { id: 'contact', label: d.nav.contact },
+];
+const section = pageId.startsWith('service:') ? 'services' : pageId.startsWith('resource:') ? 'resources' : pageId;
+const isCurrent = (id: string) => (id === section ? 'page' : undefined);
+---
+
+<div class="utility on-dark">
+  <div class="container utility__inner">
+    <div class="ticker" data-ticker role="region" aria-label={d.utility.tickerLabel}>
+      <p class="visually-hidden">{tickerItems.map((i) => i.text).join(' · ')}</p>
+      <div class="ticker__viewport" aria-hidden="true">
+        <div class="ticker__track">
+          {
+            [0, 1].map(() => (
+              <span class="ticker__group">
+                {tickerItems.map((i) => (
+                  <span class="ticker__item">
+                    <Icon name={i.icon} size={15} />
+                    {i.text}
+                  </span>
+                ))}
+              </span>
+            ))
+          }
+        </div>
+      </div>
+      <button type="button" class="ticker__toggle" data-ticker-toggle aria-pressed="false" data-label-pause={d.utility.tickerPause} data-label-play={d.utility.tickerPlay} aria-label={d.utility.tickerPause}>
+        <span class="ticker__icon-pause"><Icon name="pause" size={14} /></span>
+        <span class="ticker__icon-play"><Icon name="play" size={14} /></span>
+      </button>
+    </div>
+    <div class="utility__actions">
+      <a class="utility__link" href={business.phone.tel}>
+        <Icon name="phone" size={16} />
+        <span>{business.phone.display}</span>
+      </a>
+      <LangSwitch lang={lang} pageId={pageId} variant="bar" />
+    </div>
+  </div>
+</div>
+
+<header class="site-header" data-header>
+  <div class="container site-header__inner">
+    <a class="brand" href={pathFor('home', lang)} aria-label={`${business.name} — ${d.nav.home}`}>
+      <Image src={emblem} alt="" width={44} height={Math.round((44 * emblem.height) / emblem.width)} densities={[2, 3]} loading="eager" class="brand__mark" />
+      <span class="brand__word">
+        <span class="brand__name">Fernando</span>
+        <span class="brand__sub">OMG Services</span>
+      </span>
+    </a>
+
+    <nav class="nav" aria-label={d.nav.main} data-nav>
+      <ul class="nav__list">
+        <li><a class="nav__link" href={pathFor('home', lang)} aria-current={isCurrent('home')}>{d.nav.home}</a></li>
+        <li class="nav__has-menu" data-services-menu>
+          <a class="nav__link nav__services-link" href={pathFor('services', lang)} aria-current={isCurrent('services')}>{d.nav.services}</a>
+          <button
+            class="nav__link nav__services-toggle"
+            type="button"
+            aria-expanded="false"
+            aria-controls={`services-menu-${lang}`}
+            data-services-toggle
+          >
+            {d.nav.services}
+            <Icon name="chevronDown" size={16} class="nav__chev" />
+          </button>
+          <div class="mega" id={`services-menu-${lang}`} data-services-panel hidden>
+            <div class="mega__grid">
+              {
+                groupOrder.map((g) => (
+                  <div class="mega__col">
+                    <p class="mega__title">{d.groups[g]}</p>
+                    <ul>
+                      {servicesByGroup(g).map((s) => (
+                        <li>
+                          <a href={pathFor(`service:${s.id}`, lang)} aria-current={pageId === `service:${s.id}` ? 'page' : undefined}>
+                            {s[lang].label}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))
+              }
+            </div>
+            <a class="arrow-link mega__all" href={pathFor('services', lang)}>
+              {d.nav.allServices} <Icon name="arrowRight" size={18} />
+            </a>
+          </div>
+        </li>
+        {
+          links.slice(1).map((l) => (
+            <li>
+              <a class="nav__link" href={pathFor(l.id, lang)} aria-current={isCurrent(l.id)}>
+                {l.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <div class="header-actions">
+      <a class="btn btn--primary btn--sm header-cta" href={contactPath(lang, contextService)} data-inquiry>{d.cta.consult}</a>
+      <a class="icon-btn header-call" href={business.phone.tel} aria-label={`${d.cta.call} ${business.phone.display}`}>
+        <Icon name="phone" size={20} />
+      </a>
+      <button class="icon-btn menu-toggle" type="button" aria-expanded="false" aria-controls={`mobile-menu-${lang}`} data-menu-toggle>
+        <span class="menu-toggle__open"><Icon name="menu" size={22} /></span>
+        <span class="menu-toggle__close"><Icon name="x" size={22} /></span>
+        <span class="visually-hidden" data-menu-label data-open={d.nav.menu} data-close={d.nav.close}>{d.nav.menu}</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="mobile-menu" id={`mobile-menu-${lang}`} data-mobile-menu>
+    <div class="container mobile-menu__inner">
+    <LangSwitch lang={lang} pageId={pageId} variant="menu" />
+    <nav aria-label={d.nav.main}>
+      <ul class="mobile-menu__list">
+        <li><a href={pathFor('home', lang)} aria-current={isCurrent('home')}>{d.nav.home}</a></li>
+        <li>
+          <details class="mobile-menu__services">
+            <summary>
+              <span>{d.nav.services}</span>
+              <Icon name="chevronDown" size={18} />
+            </summary>
+            {
+              groupOrder.map((g) => (
+                <div class="mobile-menu__group">
+                  <p>{d.groups[g]}</p>
+                  <ul>
+                    {servicesByGroup(g).map((s) => (
+                      <li>
+                        <a href={pathFor(`service:${s.id}`, lang)}>{s[lang].label}</a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))
+            }
+            <a class="arrow-link" href={pathFor('services', lang)}>
+              {d.nav.allServices} <Icon name="arrowRight" size={18} />
+            </a>
+          </details>
+        </li>
+        {
+          links.slice(1).map((l) => (
+            <li>
+              <a href={pathFor(l.id, lang)} aria-current={isCurrent(l.id)}>
+                {l.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+      <div class="mobile-menu__footer">
+        <a class="btn btn--primary btn--block" href={contactPath(lang, contextService)} data-inquiry>{d.cta.consult}</a>
+        <a class="btn btn--secondary btn--block" href={business.phone.tel}>
+          <Icon name="phone" size={18} />
+          {business.phone.display}
+        </a>
+      </div>
+    </nav>
+    </div>
+  </div>
+</header>
+
+<style>
+  .utility {
+    background: var(--navy-950);
+    color: #c9d6e6;
+    font-size: 0.875rem;
+  }
+  .utility__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 40px;
+  }
+  .utility__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: none;
+  }
+  .utility__link {
+    color: var(--white);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 40px;
+    padding-inline: 0.6rem;
+    font-weight: 600;
+    border-radius: 6px;
+  }
+  .utility__link:hover {
+    background: rgb(255 255 255 / 0.08);
+  }
+  @media (max-width: 899px) {
+    .utility__link {
+      display: none !important;
+    }
+  }
+
+  /* Scrolling information strip (pauses on hover, focus or with its button; static under reduced motion). */
+  .ticker {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex: 1;
+    min-width: 0;
+  }
+  .ticker__viewport {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .ticker__viewport::before,
+  .ticker__viewport::after {
+    content: '';
+    position: absolute;
+    z-index: 1;
+    top: 0;
+    bottom: 0;
+    width: 1.5rem;
+    pointer-events: none;
+  }
+  .ticker__viewport::before {
+    left: 0;
+    background: linear-gradient(90deg, var(--navy-950), transparent);
+  }
+  .ticker__viewport::after {
+    right: 0;
+    background: linear-gradient(270deg, var(--navy-950), transparent);
+  }
+  .ticker__track {
+    display: flex;
+    width: max-content;
+    will-change: transform;
+  }
+  .ticker__group {
+    display: flex;
+    flex: none;
+  }
+  .ticker__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding-right: 2.75rem;
+    white-space: nowrap;
+    color: #dbe5f1;
+  }
+  .ticker__item :global(.icon) {
+    color: #ff8f91;
+  }
+  .ticker__toggle {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 28px;
+    height: 28px;
+    border: 0;
+    border-radius: 50%;
+    background: rgb(255 255 255 / 0.1);
+    color: var(--white);
+    cursor: pointer;
+  }
+  .ticker__toggle:hover {
+    background: rgb(255 255 255 / 0.2);
+  }
+  .ticker__toggle:focus-visible {
+    outline: 2px solid var(--focus-on-dark);
+    outline-offset: 2px;
+  }
+  .ticker__icon-play,
+  .ticker.is-paused .ticker__icon-pause {
+    display: none;
+  }
+  .ticker.is-paused .ticker__icon-play {
+    display: grid;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    :global(.js) .ticker__track {
+      animation: ticker 38s linear infinite;
+    }
+    :global(.js) .ticker:hover .ticker__track,
+    :global(.js) .ticker:focus-within .ticker__track,
+    :global(.js) .ticker.is-paused .ticker__track {
+      animation-play-state: paused;
+    }
+    @keyframes ticker {
+      to {
+        transform: translateX(-50%);
+      }
+    }
+  }
+  /* Without motion the strip simply shows the first items, and the second copy is hidden. */
+  @media (prefers-reduced-motion: reduce) {
+    .ticker__group + .ticker__group,
+    .ticker__toggle {
+      display: none;
+    }
+  }
+  :global(.no-js) .ticker__group + .ticker__group,
+  :global(.no-js) .ticker__toggle {
+    display: none;
+  }
+
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    /* Solid background: a backdrop-filter here would trap the fixed mobile menu inside the header box. */
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+  }
+  .site-header__inner {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    height: var(--header-h);
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    text-decoration: none;
+    flex: none;
+    min-height: 44px;
+  }
+  .brand__mark {
+    width: 40px;
+    height: auto;
+  }
+  .brand__word {
+    display: grid;
+    line-height: 1;
+    font-family: var(--font-display);
+    color: var(--navy);
+  }
+  .brand__name {
+    font-weight: 800;
+    font-size: 1.2rem;
+    letter-spacing: -0.02em;
+  }
+  .brand__sub {
+    font-weight: 700;
+    font-size: 0.72rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    margin-top: 0.3rem;
+    color: var(--muted);
+  }
+
+  .nav {
+    margin-left: auto;
+  }
+  .nav__list {
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .nav__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    min-height: 44px;
+    padding: 0 0.75rem;
+    border-radius: 8px;
+    color: var(--ink);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    background: none;
+    border: 0;
+    font-family: inherit;
+    cursor: pointer;
+    position: relative;
+  }
+  .nav__link:hover {
+    background: var(--sky);
+    color: var(--navy);
+  }
+  .nav__link[aria-current='page']::after {
+    content: '';
+    position: absolute;
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: 6px;
+    height: 2px;
+    background: var(--red);
+    border-radius: 2px;
+  }
+  .nav__services-toggle {
+    display: none;
+  }
+  :global(.js) .nav__services-link {
+    display: none;
+  }
+  :global(.js) .nav__services-toggle {
+    display: inline-flex;
+  }
+  .nav__chev {
+    transition: transform var(--dur) var(--ease);
+  }
+  [aria-expanded='true'] .nav__chev {
+    transform: rotate(180deg);
+  }
+  .nav__has-menu {
+    position: static;
+  }
+
+  .mega {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    box-shadow: var(--shadow-lg);
+    padding: 2rem max(var(--gutter), calc((100vw - var(--container)) / 2)) 1.5rem;
+  }
+  .mega__grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
+  }
+  .mega__title {
+    font-family: var(--font-display);
+    font-weight: 800;
+    color: var(--navy);
+    font-size: 0.95rem;
+    margin: 0 0 0.6rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 2px solid var(--red);
+    width: fit-content;
+  }
+  .mega ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 0.1rem;
+  }
+  .mega li a {
+    display: block;
+    padding: 0.45rem 0;
+    color: var(--ink);
+    text-decoration: none;
+    line-height: 1.35;
+  }
+  .mega li a:hover,
+  .mega li a[aria-current='page'] {
+    color: var(--red-700);
+    text-decoration: underline;
+  }
+  .mega__all {
+    margin-top: 1.25rem;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .icon-btn {
+    display: inline-grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--white);
+    color: var(--navy);
+    cursor: pointer;
+  }
+  .icon-btn:hover {
+    background: var(--sky);
+  }
+  .menu-toggle,
+  .header-call {
+    display: none;
+  }
+  .menu-toggle__close {
+    display: none;
+  }
+  .menu-toggle[aria-expanded='true'] .menu-toggle__open {
+    display: none;
+  }
+  .menu-toggle[aria-expanded='true'] .menu-toggle__close {
+    display: block;
+  }
+
+  .mobile-menu {
+    display: none;
+  }
+
+  @media (max-width: 1099px) {
+    .nav {
+      display: none;
+    }
+    .header-actions {
+      margin-left: auto;
+    }
+    .header-call,
+    .menu-toggle {
+      display: inline-grid;
+    }
+    :global(.js) .mobile-menu {
+      position: fixed;
+      inset: var(--menu-top, var(--header-h)) 0 0 0;
+      background: var(--white);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      border-top: 1px solid var(--border);
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-8px);
+      transition:
+        opacity var(--dur) var(--ease),
+        transform var(--dur) var(--ease),
+        visibility 0s linear var(--dur);
+    }
+    :global(.js) .mobile-menu.is-open {
+      opacity: 1;
+      visibility: visible;
+      transform: none;
+      transition-delay: 0s;
+    }
+    .mobile-menu {
+      display: block;
+    }
+    /* Without JavaScript, the menu is simply shown below the header. */
+    :global(.no-js) .mobile-menu {
+      border-top: 1px solid var(--border);
+    }
+    :global(.no-js) .menu-toggle {
+      display: none;
+    }
+  }
+  @media (max-width: 599px) {
+    .header-cta {
+      display: none;
+    }
+  }
+
+  .mobile-menu__inner {
+    padding-block: 0.25rem 2rem;
+  }
+  .mobile-menu__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .mobile-menu__list > li {
+    border-bottom: 1px solid var(--border);
+  }
+  .mobile-menu__list > li > a,
+  .mobile-menu__services summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 56px;
+    color: var(--navy);
+    text-decoration: none;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.125rem;
+    cursor: pointer;
+    list-style: none;
+  }
+  .mobile-menu__services summary::-webkit-details-marker {
+    display: none;
+  }
+  .mobile-menu__services[open] summary :global(.icon) {
+    transform: rotate(180deg);
+  }
+  .mobile-menu__list a[aria-current='page'] {
+    color: var(--red-700);
+  }
+  .mobile-menu__group p {
+    font-weight: 700;
+    color: var(--muted);
+    font-size: 0.875rem;
+    margin: 0.75rem 0 0.25rem;
+  }
+  .mobile-menu__group ul {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 0.5rem;
+  }
+  .mobile-menu__group a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .mobile-menu__services > .arrow-link {
+    margin-bottom: 0.75rem;
+  }
+  .mobile-menu__footer {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+</style>
+
+<script>
+  // Ticker pause button (WCAG 2.2.2: moving content can be paused).
+  document.querySelectorAll<HTMLElement>('[data-ticker]').forEach((root) => {
+    const btn = root.querySelector<HTMLButtonElement>('[data-ticker-toggle]');
+    btn?.addEventListener('click', () => {
+      const paused = root.classList.toggle('is-paused');
+      btn.setAttribute('aria-pressed', String(paused));
+      btn.setAttribute('aria-label', (paused ? btn.dataset.labelPlay : btn.dataset.labelPause) ?? '');
+    });
+  });
+
+  const header = document.querySelector<HTMLElement>('[data-header]');
+  if (header) {
+    // Services mega menu (desktop)
+    const wrap = header.querySelector<HTMLElement>('[data-services-menu]');
+    const toggle = header.querySelector<HTMLButtonElement>('[data-services-toggle]');
+    const panel = header.querySelector<HTMLElement>('[data-services-panel]');
+    const setMega = (open: boolean) => {
+      if (!toggle || !panel) return;
+      toggle.setAttribute('aria-expanded', String(open));
+      panel.hidden = !open;
+    };
+    toggle?.addEventListener('click', () => setMega(toggle.getAttribute('aria-expanded') !== 'true'));
+    document.addEventListener('click', (e) => {
+      if (wrap && !wrap.contains(e.target as Node)) setMega(false);
+    });
+    wrap?.addEventListener('focusout', (e) => {
+      if (!wrap.contains(e.relatedTarget as Node | null)) setMega(false);
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && toggle?.getAttribute('aria-expanded') === 'true') {
+        setMega(false);
+        toggle.focus();
+      }
+    });
+
+    // Mobile menu
+    const menuBtn = header.querySelector<HTMLButtonElement>('[data-menu-toggle]');
+    const menu = header.querySelector<HTMLElement>('[data-mobile-menu]');
+    const label = header.querySelector<HTMLElement>('[data-menu-label]');
+    const main = document.getElementById('main');
+    const footer = document.querySelector('footer');
+    const setMenu = (open: boolean) => {
+      if (!menuBtn || !menu) return;
+      // Open directly below the header, wherever it currently sits (the utility bar scrolls away).
+      if (open) menu.style.setProperty('--menu-top', `${Math.round(header.getBoundingClientRect().bottom)}px`);
+      menuBtn.setAttribute('aria-expanded', String(open));
+      menu.classList.toggle('is-open', open);
+      document.documentElement.style.overflow = open ? 'hidden' : '';
+      if (label) label.textContent = (open ? label.dataset.close : label.dataset.open) ?? '';
+      // Keep focus inside the open menu by making the page behind it inert.
+      main?.toggleAttribute('inert', open);
+      footer?.toggleAttribute('inert', open);
+      if (open) menu.querySelector<HTMLElement>('.mobile-menu__list a, summary')?.focus();
+    };
+    menuBtn?.addEventListener('click', () => setMenu(menuBtn.getAttribute('aria-expanded') !== 'true'));
+    menu?.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        setMenu(false);
+        menuBtn?.focus();
+      }
+    });
+    menu?.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => setMenu(false)));
+    window.matchMedia('(min-width: 1100px)').addEventListener('change', (e) => e.matches && setMenu(false));
+  }
+</script>

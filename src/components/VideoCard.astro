@@ -1,0 +1,226 @@
+---
+// Video card: self-hosted cover image + "play here" that swaps in TikTok's official embed player.
+// TikTok is contacted only after the visitor presses play. Without JavaScript the cover links to the post.
+// Covers live in src/assets/videos/<videoId>.jpg (see scripts/capture-video-covers.mjs).
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import Icon from './Icon.astro';
+import type { Lang, VideoEntry } from '../content/types';
+import { t } from '../i18n/ui';
+
+interface Props {
+  video: VideoEntry;
+  lang: Lang;
+}
+const { video: v, lang } = Astro.props;
+const d = t(lang).videos;
+const cta = v.platform === 'tiktok' ? d.watchTikTok : d.watchYouTube;
+const videoId = v.url.match(/(\d{8,})/)?.[1] ?? '';
+const covers = import.meta.glob<{ default: ImageMetadata }>('../assets/videos/*.{jpg,jpeg,png,webp}', { eager: true });
+const cover = Object.entries(covers).find(([p]) => p.includes(`/${videoId}.`))?.[1].default;
+const canEmbed = v.platform === 'tiktok' && !!videoId;
+const playerSrc = `https://www.tiktok.com/player/v1/${videoId}?autoplay=1&rel=0&music_info=0&description=1`;
+---
+
+<article class="video">
+  <div class="video__media" data-video-media>
+    <a
+      class="video__thumb"
+      href={v.url}
+      target="_blank"
+      rel="noopener"
+      data-play={canEmbed ? playerSrc : undefined}
+      data-title={v.title[lang]}
+      aria-label={`${canEmbed ? d.playHere : cta} : ${v.title[lang]}`}
+    >
+      {
+        cover ? (
+          <Image src={cover} alt="" widths={[300, 450, 540]} sizes="(max-width: 899px) 90vw, 400px" loading="lazy" class="video__img" />
+        ) : (
+          <span class="video__placeholder" aria-hidden="true" />
+        )
+      }
+      <span class="video__shade" aria-hidden="true"></span>
+      <span class="video__play" aria-hidden="true"><Icon name="play" size={26} /></span>
+    </a>
+    <span class="video__platform" aria-hidden="true"><Icon name={v.platform} size={16} /> {v.platform === 'tiktok' ? 'TikTok' : 'YouTube'}</span>
+    <span class="video__topic" aria-hidden="true">{v.topic[lang]}</span>
+  </div>
+  <div class="video__body">
+    <h3 class="video__title">{v.title[lang]}</h3>
+    <p>{v.summary[lang]}</p>
+    <a href={v.url} target="_blank" rel="noopener" class="video__cta">
+      {cta} <Icon name="arrowUpRight" size={18} />
+      <span class="visually-hidden">— {v.title[lang]} {d.external}</span>
+    </a>
+  </div>
+</article>
+
+<style>
+  .video {
+    /* Containing block for the visually hidden labels, so they never escape a scrolling row. */
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    height: 100%;
+    transition:
+      box-shadow var(--dur) var(--ease),
+      transform var(--dur) var(--ease);
+  }
+  .video:hover {
+    box-shadow: var(--shadow);
+  }
+  .video__media {
+    position: relative;
+    background: var(--navy-950);
+  }
+  .video__thumb {
+    position: relative;
+    display: grid;
+    place-items: center;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    color: var(--white);
+    text-decoration: none;
+  }
+  .video__thumb :global(.video__img),
+  .video__placeholder {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 30%;
+    transition: transform 600ms var(--ease);
+  }
+  .video__placeholder {
+    background:
+      radial-gradient(circle at 80% 20%, rgb(193 20 24 / 0.35), transparent 45%),
+      linear-gradient(135deg, var(--navy) 0%, var(--navy-950) 100%);
+  }
+  .video__thumb:hover :global(.video__img) {
+    transform: scale(1.04);
+  }
+  .video__shade {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgb(0 26 61 / 0.15) 0%, transparent 35%, rgb(0 26 61 / 0.75) 100%);
+  }
+  .video__platform,
+  .video__topic {
+    pointer-events: none;
+    color: var(--white);
+  }
+  .video__platform {
+    position: absolute;
+    z-index: 1;
+    top: 0.85rem;
+    left: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    background: rgb(0 26 61 / 0.6);
+    padding: 0.3rem 0.65rem;
+    border-radius: 999px;
+  }
+  .video__play {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: rgb(255 255 255 / 0.95);
+    color: var(--red);
+    box-shadow: 0 10px 30px -8px rgb(0 0 0 / 0.5);
+    transition: transform var(--dur) var(--ease);
+  }
+  .video__play :global(.icon) {
+    margin-left: 3px;
+  }
+  .video__thumb:hover .video__play,
+  .video__thumb:focus-visible .video__play {
+    transform: scale(1.08);
+  }
+  .video__thumb:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: -3px;
+  }
+  .video__topic {
+    position: absolute;
+    z-index: 1;
+    bottom: 0.9rem;
+    left: 0.9rem;
+    right: 0.9rem;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.95rem;
+    text-shadow: 0 1px 8px rgb(0 0 0 / 0.5);
+  }
+  /* Playing state: TikTok's player in a portrait frame. */
+  .video__media :global(iframe) {
+    display: block;
+    width: 100%;
+    aspect-ratio: 9 / 16;
+    max-height: 78vh;
+    border: 0;
+    background: #000;
+  }
+  .video__body {
+    padding: 1.25rem 1.35rem 1.35rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+  }
+  .video__title {
+    font-size: 1.1rem;
+    margin: 0;
+  }
+  .video__body p {
+    color: var(--muted);
+    margin: 0;
+    flex: 1;
+  }
+  .video__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    min-height: 44px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--red-700);
+    text-decoration: none;
+    align-self: flex-start;
+  }
+  .video__cta:hover {
+    text-decoration: underline;
+  }
+</style>
+
+<script>
+  // Swap the cover for TikTok's official player only when the visitor asks for it.
+  document.addEventListener('click', (e) => {
+    const link = (e.target as HTMLElement).closest<HTMLAnchorElement>('a[data-play]');
+    if (!link || e.metaKey || e.ctrlKey || e.shiftKey) return;
+    e.preventDefault();
+    const media = link.closest<HTMLElement>('[data-video-media]');
+    if (!media) return;
+    const frame = document.createElement('iframe');
+    frame.src = link.dataset.play!;
+    frame.title = link.dataset.title ?? 'TikTok';
+    frame.allow = 'autoplay; encrypted-media; fullscreen; picture-in-picture';
+    frame.allowFullscreen = true;
+    frame.loading = 'eager';
+    media.replaceChildren(frame);
+    frame.focus();
+  });
+</script>

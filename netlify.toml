@@ -1,0 +1,19 @@
+# Public site, launched 27 Oct 2026 on https://fosinternational.com (www redirects to it).
+# INDEXING = "true" makes pages indexable, lets robots.txt allow crawling and list the sitemap,
+# and leaves out anything still marked permission: 'pending'. SITE_URL drives every canonical,
+# hreflang, Open Graph and sitemap address.
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "24"
+  SITE_URL = "https://fosinternational.com"
+  INDEXING = "true"
+
+# Deploy previews and branch deploys stay out of search engines.
+[context.deploy-preview.environment]
+  INDEXING = "false"
+
+[context.branch-deploy.environment]
+  INDEXING = "false"

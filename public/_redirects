@@ -1,0 +1,8 @@
+# The old review address now points to the public domain (keeps shared links working, one site for Google).
+https://fernando-omg-services.netlify.app/*  https://fosinternational.com/:splat  301!
+
+# Root: open the visitor's language. Netlify matches the browser's Accept-Language header, and the
+# nf_lang cookie set by the language switch overrides it. Anyone else gets French, the primary version.
+/  /es/  302!  Language=es
+/  /en/  302!  Language=en
+/  /fr/  302!

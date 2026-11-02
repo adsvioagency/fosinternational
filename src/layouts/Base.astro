@@ -1,0 +1,292 @@
+---
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import InquiryDialog from '../components/InquiryDialog.astro';
+import WhatsAppFab from '../components/WhatsAppFab.astro';
+import Icon from '../components/Icon.astro';
+import logo from '../assets/photos/logo-official.jpg';
+import portrait from '../assets/photos/fernando-portrait-blue.jpg';
+import { getImage } from 'astro:assets';
+import { business } from '../config/business';
+import { isLaunchBuild } from '../config/env';
+import { langs, defaultLang, type Lang } from '../content/types';
+import { pathFor, contactPath, alternatesFor, type PageId } from '../i18n/routes';
+import { t, ui } from '../i18n/ui';
+import { abs, breadcrumbNode, jsonLd, organizationNode, personNode, websiteNode, type Crumb } from '../lib/seo';
+
+interface Props {
+  lang: Lang;
+  pageId: PageId;
+  title: string;
+  description: string;
+  crumbs?: Crumb[];
+  schema?: object[];
+  /** The contact page renders its own inline form instead of the dialog. */
+  inlineForm?: boolean;
+  ogType?: 'website' | 'article';
+}
+
+const { lang, pageId, title, description, crumbs = [], schema = [], inlineForm = false, ogType = 'website' } = Astro.props;
+const d = t(lang);
+// On a service page, generic consultation buttons preselect that service.
+const contextService = pageId.startsWith("service:") ? pageId.slice(8) : undefined;
+const canonical = abs(pathFor(pageId, lang));
+const alternates = alternatesFor(pageId);
+const ogLocales: Record<Lang, string> = { fr: 'fr_FR', en: 'en_US', es: 'es_LA' };
+// Copy for the "also available in your language" bar, written in each target language.
+const suggestions = Object.fromEntries(
+  langs
+    .filter((l) => l !== lang)
+    .map((l) => [l, { ...ui[l].langSuggest, href: alternates[l] }])
+);
+const fullTitle = pageId === 'home' ? title : `${title} | ${business.name} (${business.acronym})`;
+const ogImage = abs('/og-default.jpg');
+
+const logoImg = await getImage({ src: logo, width: 512, format: 'jpg' });
+const portraitImg = await getImage({ src: portrait, width: 800, format: 'jpg' });
+
+const graph: object[] = [
+  organizationNode(lang, abs(logoImg.src), abs(portraitImg.src)),
+  personNode(lang, abs(portraitImg.src)),
+  websiteNode(),
+  ...(crumbs.length ? [breadcrumbNode(crumbs)] : []),
+  ...schema,
+];
+---
+
+<!doctype html>
+<html lang={lang} class="no-js" translate="no">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Every page exists in French, English and Spanish: no machine-translation prompt. -->
+    <meta name="google" content="notranslate" />
+    <script is:inline>document.documentElement.classList.replace('no-js', 'js');</script>
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    {!isLaunchBuild && <meta name="robots" content="noindex, nofollow" />}
+    <link rel="canonical" href={canonical} />
+    {langs.map((l) => <link rel="alternate" hreflang={l} href={abs(alternates[l])} />)}
+    <link rel="alternate" hreflang="x-default" href={abs(alternates[defaultLang])} />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:site_name" content={`${business.name} (${business.acronym})`} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={business.name} />
+    <meta property="og:locale" content={ogLocales[lang]} />
+    {langs.filter((l) => l !== lang).map((l) => <meta property="og:locale:alternate" content={ogLocales[l]} />)}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#00295F" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <script type="application/ld+json" set:html={jsonLd(graph)} />
+    <slot name="head" />
+  </head>
+  <body class:list={{ 'no-mobile-bar': inlineForm }}>
+    <a class="skip-link" href="#main">{d.skip}</a>
+    <div class="lang-suggest" data-lang-suggest data-current={lang} data-copy={JSON.stringify(suggestions)} hidden>
+      <div class="container lang-suggest__inner">
+        <p data-lang-suggest-text></p>
+        <a class="lang-suggest__go" href="#" data-lang-suggest-go data-lang-choice=""></a>
+        <button type="button" class="lang-suggest__no" data-lang-suggest-no></button>
+      </div>
+    </div>
+    <Header lang={lang} pageId={pageId} />
+    <main id="main" tabindex="-1">
+      <slot />
+    </main>
+    <Footer lang={lang} pageId={pageId} />
+
+    {!inlineForm && (
+    <div class="mobile-bar" aria-label={d.contact.otherWays} role="region">
+      <a class="btn btn--secondary mobile-bar__call" href={business.phone.tel} aria-label={`${d.cta.call} ${business.phone.display}`}>
+        <Icon name="phone" size={20} />
+      </a>
+      <a class="btn btn--primary mobile-bar__cta" href={contactPath(lang, contextService)} data-inquiry>
+        {d.cta.consult}
+      </a>
+    </div>
+    )}
+
+    {!inlineForm && <InquiryDialog lang={lang} />}
+    <WhatsAppFab lang={lang} serviceId={contextService} />
+
+    <style>
+      main:focus {
+        outline: none;
+      }
+      .mobile-bar {
+        display: none;
+      }
+      @media (max-width: 767px) {
+        .mobile-bar {
+          position: fixed;
+          z-index: 40;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          display: grid;
+          grid-template-columns: auto 1fr;
+          gap: 0.5rem;
+          padding: 0.6rem var(--gutter) calc(0.6rem + env(safe-area-inset-bottom, 0px));
+          background: rgb(255 255 255 / 0.97);
+          border-top: 1px solid var(--border);
+          box-shadow: 0 -8px 24px -16px rgb(0 26 61 / 0.35);
+        }
+        .mobile-bar .btn {
+          min-height: 48px;
+          padding-inline: 1rem;
+        }
+        .mobile-bar__call {
+          width: 52px;
+          padding-inline: 0 !important;
+        }
+        .mobile-bar__call {
+          background: var(--white);
+        }
+      }
+      :global(body.no-mobile-bar) {
+        padding-bottom: 0;
+      }
+      :global(.no-js) .site-header {
+        position: relative;
+      }
+      .lang-suggest {
+        background: var(--sky-200);
+        color: var(--navy);
+        font-size: 0.95rem;
+      }
+      .lang-suggest[hidden] {
+        display: none;
+      }
+      .lang-suggest__inner {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.25rem 1rem;
+        min-height: 48px;
+        padding-block: 0.35rem;
+      }
+      .lang-suggest p {
+        margin: 0;
+        font-weight: 600;
+      }
+      .lang-suggest__go {
+        display: inline-flex;
+        align-items: center;
+        min-height: 36px;
+        padding: 0 0.9rem;
+        border-radius: 999px;
+        background: var(--navy);
+        color: var(--white);
+        font-weight: 700;
+        text-decoration: none;
+      }
+      .lang-suggest__no {
+        min-height: 36px;
+        padding: 0 0.5rem;
+        border: 0;
+        background: none;
+        color: var(--navy);
+        font: inherit;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        cursor: pointer;
+      }
+    </style>
+
+    <script>
+      // "Also available in your language": offered once per visit when the browser prefers another
+      // language we publish and the visitor has not chosen one yet (nf_lang cookie). Never redirects.
+      const bar = document.querySelector<HTMLElement>('[data-lang-suggest]');
+      if (bar) {
+        const current = bar.dataset.current ?? '';
+        const copy = JSON.parse(bar.dataset.copy ?? '{}') as Record<string, { text: string; action: string; dismiss: string; href: string }>;
+        const chosen = /(?:^|;\s*)nf_lang=/.test(document.cookie);
+        let dismissed = false;
+        try {
+          dismissed = sessionStorage.getItem('fos-lang-suggest') === '1';
+        } catch {
+          /* storage unavailable */
+        }
+        // Haitian Creole readers are offered French.
+        const supported = (tag: string) => {
+          const base = tag.toLowerCase().split('-')[0];
+          return base === 'ht' ? 'fr' : base;
+        };
+        const preferred = (navigator.languages?.length ? navigator.languages : [navigator.language]).map(supported).find((l) => l in copy || l === current);
+        if (!chosen && !dismissed && preferred && preferred !== current && copy[preferred]) {
+          const c = copy[preferred];
+          const text = bar.querySelector<HTMLElement>('[data-lang-suggest-text]')!;
+          const go = bar.querySelector<HTMLAnchorElement>('[data-lang-suggest-go]')!;
+          const no = bar.querySelector<HTMLButtonElement>('[data-lang-suggest-no]')!;
+          text.textContent = c.text;
+          go.textContent = c.action;
+          go.href = c.href;
+          go.dataset.langChoice = preferred;
+          bar.lang = preferred;
+          no.textContent = c.dismiss;
+          bar.hidden = false;
+          no.addEventListener('click', () => {
+            bar.hidden = true;
+            document.cookie = `nf_lang=${current}; path=/; max-age=31536000; SameSite=Lax`;
+            try {
+              sessionStorage.setItem('fos-lang-suggest', '1');
+            } catch {
+              /* storage unavailable */
+            }
+          });
+        }
+      }
+    </script>
+
+    <script>
+      // Scroll reveal: blocks below the fold fade and rise in as they enter the viewport.
+      // Only elements not yet on screen are tagged, so nothing visible on load ever flickers.
+      // Content stays visible without JavaScript and under prefers-reduced-motion.
+      const groups: [string, string][] = [
+        // [selector, variant]; siblings in the same grid are staggered.
+        ['.section-head, .related__title, .rel-title, .mission__text, .svc-block, .summary, .steps__note, .cta-band__inner, .office__hours, .role__col, .scripture__inner', 'up'],
+        ['.card-grid > li, .finder__grid > li, .related > li, .rel > li, .guides > li, .videos > li, .quotes > li, .stories__quotes > li, .stories > li, .guide-links > li, .values > li, .groups > .group, .ways > li, .assure__list > li, .office__facts > div, .team-grid > li, .person__team > li, .credentials > li, .other', 'up'],
+        ['.person__media, .stories__photo, .story__media, .photos > li, .phone, .team__logo, .office__map, .leader__frame', 'media'],
+        ['.person__text, .story__text, .leader__text > h3, .steps__text > h2, .steps__text > .lead', 'side'],
+      ];
+      const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if ('IntersectionObserver' in window && !reduce) {
+        const fold = window.innerHeight;
+        for (const [selector, variant] of groups) {
+          document.querySelectorAll<HTMLElement>(`main ${selector.split(', ').join(', main ')}`).forEach((el) => {
+            if (el.hasAttribute('data-reveal') || el.closest('.hero, dialog')) return;
+            if (el.getBoundingClientRect().top < fold) return;
+            el.dataset.reveal = variant;
+            const siblings = el.parentElement ? [...el.parentElement.children] : [];
+            const index = siblings.indexOf(el);
+            if (siblings.length > 1 && index > 0) el.style.setProperty('--reveal-delay', `${(index % 6) * 80}ms`);
+          });
+        }
+      }
+      const items = document.querySelectorAll<HTMLElement>('[data-reveal]');
+      if ('IntersectionObserver' in window && !reduce) {
+        const io = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                entry.target.classList.add('is-visible');
+                io.unobserve(entry.target);
+              }
+            });
+          },
+          { rootMargin: '0px 0px -8% 0px' }
+        );
+        items.forEach((el) => io.observe(el));
+      } else {
+        items.forEach((el) => el.classList.add('is-visible'));
+      }
+    </script>
+  </body>
+</html>

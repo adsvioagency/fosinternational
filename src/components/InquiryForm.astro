@@ -1,0 +1,418 @@
+---
+import Icon from './Icon.astro';
+import { business } from '../config/business';
+import type { Lang } from '../content/types';
+import { serviceOptions } from '../content/services/index';
+import { pathFor } from '../i18n/routes';
+import { t } from '../i18n/ui';
+import { MESSAGE_MAX, NOT_SURE_ID, OTHER_COUNTRY_ID } from '../lib/whatsapp';
+
+interface Props {
+  lang: Lang;
+  idPrefix: string;
+  headingLevel?: 'h2' | 'h3';
+  showHeading?: boolean;
+}
+const { lang, idPrefix: p, headingLevel = 'h2', showHeading = true } = Astro.props;
+const d = t(lang);
+const f = d.form;
+const groups = serviceOptions(lang);
+const labels: Record<string, string> = { [NOT_SURE_ID]: f.notSure, [OTHER_COUNTRY_ID]: f.otherCountry };
+for (const g of groups) for (const o of g.options) labels[o.id] = o.label;
+const Heading = headingLevel;
+---
+
+<div class="inquiry" data-inquiry-form data-lang={lang} data-labels={JSON.stringify(labels)} data-errors={JSON.stringify(f.errors)}>
+  <div class="inquiry__step" data-step="form">
+    {showHeading && <Heading class="inquiry__title">{f.title}</Heading>}
+    <p class="inquiry__intro">{f.intro}</p>
+
+    <div class="error-summary" role="alert" tabindex="-1" data-error-summary hidden>
+      <p class="error-summary__title"><Icon name="alert" size={20} /> {f.errorSummary}</p>
+      <ul data-error-list></ul>
+    </div>
+
+    <form novalidate data-form>
+      <div class="field-row">
+        <div class="field" data-field="firstName">
+          <label for={`${p}-first`}>{f.firstName} <span aria-hidden="true" class="req">*</span></label>
+          <input id={`${p}-first`} name="firstName" type="text" autocomplete="given-name" required maxlength="80" aria-describedby={`${p}-first-err`} />
+          <p class="field__error" id={`${p}-first-err`} data-error></p>
+        </div>
+        <div class="field" data-field="lastName">
+          <label for={`${p}-last`}>{f.lastName} <span aria-hidden="true" class="req">*</span></label>
+          <input id={`${p}-last`} name="lastName" type="text" autocomplete="family-name" required maxlength="80" aria-describedby={`${p}-last-err`} />
+          <p class="field__error" id={`${p}-last-err`} data-error></p>
+        </div>
+      </div>
+
+      <div class="field" data-field="phone">
+        <label for={`${p}-phone`}>{f.phone} <span aria-hidden="true" class="req">*</span></label>
+        <input
+          id={`${p}-phone`}
+          name="phone"
+          type="tel"
+          inputmode="tel"
+          autocomplete="tel"
+          required
+          maxlength="25"
+          aria-describedby={`${p}-phone-hint ${p}-phone-err`}
+        />
+        <p class="field__hint" id={`${p}-phone-hint`}>{f.phoneHint}</p>
+        <p class="field__error" id={`${p}-phone-err`} data-error></p>
+      </div>
+
+      <div class="field" data-field="service">
+        <label for={`${p}-service`}>{f.service} <span aria-hidden="true" class="req">*</span></label>
+        <div class="select">
+          <select id={`${p}-service`} name="service" required aria-describedby={`${p}-service-err`}>
+            <option value="">{f.servicePlaceholder}</option>
+            <option value={NOT_SURE_ID}>{f.notSure}</option>
+            <option value={OTHER_COUNTRY_ID}>{f.otherCountry}</option>
+            {
+              groups.map((g) => (
+                <optgroup label={d.groups[g.group]}>
+                  {g.options.map((o) => (
+                    <option value={o.id}>{o.label}</option>
+                  ))}
+                </optgroup>
+              ))
+            }
+          </select>
+          <Icon name="chevronDown" size={18} class="select__chev" />
+        </div>
+        <p class="field__error" id={`${p}-service-err`} data-error></p>
+      </div>
+
+      <div class="field" data-field="message">
+        <label for={`${p}-message`}>
+          {f.message}
+          <span class="field__opt" data-msg-optional>({f.optional})</span>
+          <span aria-hidden="true" class="req" data-msg-required hidden>*</span>
+        </label>
+        <textarea
+          id={`${p}-message`}
+          name="message"
+          rows="4"
+          maxlength={MESSAGE_MAX + 200}
+          aria-describedby={`${p}-message-hint ${p}-message-count ${p}-message-err`}></textarea>
+        <div class="field__meta">
+          <p class="field__hint" id={`${p}-message-hint`} data-hint-default={f.messageHint} data-hint-notsure={f.messageHintNotSure} data-hint-other={f.messageHintOther}>
+            {f.messageHint}
+          </p>
+          <p class="field__count" id={`${p}-message-count`} data-count data-template={f.charsLeft(999999)}>
+            {f.charsLeft(MESSAGE_MAX)}
+          </p>
+        </div>
+        <p class="field__error" id={`${p}-message-err`} data-error></p>
+      </div>
+
+      <fieldset class="field field--choices">
+        <legend>{f.preference} <span class="field__opt">({f.optional})</span></legend>
+        <div class="choices">
+          <label class="choice"><input type="radio" name="preference" value="online" /> <span>{f.prefOnline}</span></label>
+          <label class="choice"><input type="radio" name="preference" value="office" /> <span>{f.prefOffice}</span></label>
+          <label class="choice"><input type="radio" name="preference" value="any" /> <span>{f.prefAny}</span></label>
+        </div>
+      </fieldset>
+
+      <p class="inquiry__privacy">
+        <Icon name="shield" size={18} />
+        <span>{f.privacy} <a href={pathFor('privacy', lang)}>{f.privacyLink}</a></span>
+      </p>
+
+      <button type="submit" class="btn btn--primary btn--block">
+        {f.review}
+        <Icon name="arrowRight" size={18} />
+      </button>
+    </form>
+  </div>
+
+  <div class="inquiry__step" data-step="preview" hidden>
+    <Heading class="inquiry__title" tabindex="-1" data-preview-heading>{f.previewTitle}</Heading>
+    <p class="inquiry__intro">{f.previewIntro}</p>
+    <div class="preview" data-preview aria-label={f.previewTitle}></div>
+    <div class="inquiry__actions">
+      <a class="btn btn--primary btn--block" href={business.whatsapp.base} target="_blank" rel="noopener" data-wa-link>
+        <Icon name="whatsapp" size={20} class="icon-wa" />
+        {f.continue}
+        <span class="visually-hidden">{f.newTab}</span>
+      </a>
+      <div class="inquiry__secondary">
+        <button type="button" class="btn btn--secondary btn--sm" data-copy>
+          <Icon name="copy" size={18} />
+          {f.copy}
+        </button>
+        <button type="button" class="btn btn--ghost btn--sm" data-edit>
+          <Icon name="pencil" size={18} />
+          {f.edit}
+        </button>
+      </div>
+      <p class="inquiry__status" role="status" aria-live="polite" data-status data-copied={f.copied} data-copy-failed={f.copyFailed} data-after-open={f.afterOpen}></p>
+      <p class="inquiry__fallback">
+        {f.fallback} <a href={business.phone.tel}>{business.phone.display}</a>.
+      </p>
+    </div>
+  </div>
+</div>
+
+<style>
+  .inquiry__title {
+    font-size: var(--step-2);
+    margin-bottom: 0.4rem;
+  }
+  .inquiry__title:focus {
+    outline: none;
+  }
+  .inquiry__intro {
+    color: var(--muted);
+    margin-bottom: 1.25rem;
+  }
+  form {
+    display: grid;
+    gap: 1.1rem;
+  }
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  @media (max-width: 479px) {
+    .field-row {
+      grid-template-columns: 1fr;
+      gap: 1.1rem;
+    }
+  }
+  .field {
+    display: grid;
+    gap: 0.35rem;
+    min-width: 0;
+  }
+  label,
+  legend {
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .req {
+    color: var(--red);
+  }
+  .field__opt {
+    font-weight: 400;
+    color: var(--muted);
+  }
+  input[type='text'],
+  input[type='tel'],
+  select,
+  textarea {
+    width: 100%;
+    min-height: 48px;
+    padding: 0.7rem 0.9rem;
+    font: inherit;
+    font-size: 1rem;
+    color: var(--ink);
+    background: var(--white);
+    border: 1.5px solid var(--border-strong);
+    border-radius: 10px;
+    transition:
+      border-color var(--dur) var(--ease),
+      box-shadow var(--dur) var(--ease);
+  }
+  textarea {
+    resize: vertical;
+    min-height: 112px;
+  }
+  input:hover,
+  select:hover,
+  textarea:hover {
+    border-color: var(--navy-800);
+  }
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: none;
+    border-color: var(--focus);
+    box-shadow: 0 0 0 3px rgb(27 95 214 / 0.25);
+  }
+  [aria-invalid='true'] {
+    border-color: var(--error) !important;
+    background: var(--error-bg);
+  }
+  .select {
+    position: relative;
+  }
+  select {
+    appearance: none;
+    padding-right: 2.5rem;
+  }
+  .select :global(.select__chev) {
+    position: absolute;
+    right: 0.85rem;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: var(--navy);
+  }
+  .field__hint,
+  .field__count {
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin: 0;
+    line-height: 1.4;
+  }
+  .field__meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.25rem 1rem;
+  }
+  .field__meta .field__hint {
+    flex: 1 1 16rem;
+  }
+  .field__count {
+    white-space: nowrap;
+  }
+  .field__count.is-over {
+    color: var(--error);
+    font-weight: 600;
+  }
+  .field__error {
+    margin: 0;
+    color: var(--error);
+    font-weight: 600;
+    font-size: 0.95rem;
+    line-height: 1.4;
+  }
+  .field__error:empty {
+    display: none;
+  }
+  .field__error::before {
+    content: '⚠ ';
+  }
+  fieldset {
+    border: 0;
+    padding: 0;
+    margin: 0;
+  }
+  legend {
+    padding: 0;
+    margin-bottom: 0.5rem;
+  }
+  .choices {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .choice {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    padding: 0.4rem 0.9rem;
+    border: 1.5px solid var(--border-strong);
+    border-radius: 999px;
+    cursor: pointer;
+    font-weight: 500;
+    background: var(--white);
+  }
+  .choice:has(input:checked) {
+    border-color: var(--navy);
+    background: var(--sky);
+    color: var(--navy);
+  }
+  .choice:has(input:focus-visible) {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+  .choice input {
+    accent-color: var(--navy);
+    width: 1.1rem;
+    height: 1.1rem;
+    margin: 0;
+  }
+  .inquiry__privacy {
+    display: grid;
+    grid-template-columns: 1.25rem 1fr;
+    gap: 0.6rem;
+    font-size: 0.925rem;
+    color: var(--muted);
+    margin: 0;
+    line-height: 1.45;
+  }
+  .inquiry__privacy :global(.icon) {
+    color: var(--navy);
+    margin-top: 0.1rem;
+  }
+
+  .error-summary {
+    border: 2px solid var(--error);
+    background: var(--error-bg);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+  .error-summary:focus {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+  .error-summary__title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    color: var(--error);
+    margin: 0 0 0.5rem;
+  }
+  .error-summary ul {
+    margin: 0;
+    padding-left: 1.75rem;
+  }
+  .error-summary a {
+    color: var(--error);
+    font-weight: 600;
+  }
+
+  .preview {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    background: #e7f5ea;
+    border: 1px solid #c7e6cf;
+    border-radius: 14px 14px 4px 14px;
+    padding: 1rem 1.1rem;
+    font-size: 0.975rem;
+    line-height: 1.5;
+    color: #13321f;
+    margin-bottom: 1.25rem;
+    max-height: 22rem;
+    overflow-y: auto;
+  }
+  .inquiry__actions {
+    display: grid;
+    gap: 0.75rem;
+  }
+  .inquiry__secondary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .inquiry__status {
+    margin: 0;
+    font-weight: 600;
+    color: var(--success);
+  }
+  .inquiry__status:empty {
+    display: none;
+  }
+  .inquiry__status.is-error {
+    color: var(--error);
+  }
+  .inquiry__fallback {
+    font-size: 0.925rem;
+    color: var(--muted);
+    margin: 0;
+  }
+</style>
+
+<script>
+  import { initInquiryForms } from '../scripts/inquiry';
+  initInquiryForms();
+</script>

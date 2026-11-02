@@ -1,0 +1,231 @@
+---
+// Floating WhatsApp button, bottom right. It opens the same inquiry form as "Request a consultation"
+// (name, phone, service, request), which prepares the WhatsApp message; without JavaScript it links
+// to the contact page. A small greeting bubble appears once per visit and can be dismissed.
+import Icon from './Icon.astro';
+import type { Lang } from '../content/types';
+import { contactPath } from '../i18n/routes';
+import { t } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+  /** Service to preselect (on service pages). */
+  serviceId?: string;
+}
+const { lang, serviceId } = Astro.props;
+const d = t(lang);
+const href = contactPath(lang, serviceId);
+---
+
+<div class="wa-fab is-tucked" data-wa-fab>
+  <div class="wa-fab__bubble" data-wa-bubble hidden>
+    <button type="button" class="wa-fab__close" data-wa-close aria-label={d.fab.close}><Icon name="x" size={16} /></button>
+    <p class="wa-fab__title">{d.fab.bubbleTitle}</p>
+    <p class="wa-fab__text">{d.fab.bubbleText}</p>
+    <a class="wa-fab__cta" href={href} data-inquiry>{d.form.title} <Icon name="arrowRight" size={16} /></a>
+  </div>
+  <a class="wa-fab__btn" href={href} data-inquiry aria-label={d.fab.label}>
+    <Icon name="whatsapp" size={30} />
+  </a>
+</div>
+
+<style>
+  .wa-fab {
+    position: fixed;
+    z-index: 45;
+    right: max(1rem, env(safe-area-inset-right, 0px));
+    bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+    display: grid;
+    justify-items: end;
+    gap: 0.75rem;
+    pointer-events: none;
+  }
+  .wa-fab > * {
+    pointer-events: auto;
+  }
+  .wa-fab__btn {
+    display: grid;
+    place-items: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    /* Darker WhatsApp green: the white glyph and the button edge both clear WCAG contrast. */
+    background: var(--whatsapp);
+    color: var(--white);
+    box-shadow:
+      0 10px 24px -8px rgb(0 26 61 / 0.45),
+      0 0 0 4px rgb(255 255 255 / 0.9);
+    transition: transform var(--dur) var(--ease);
+  }
+  .wa-fab__btn:hover {
+    transform: scale(1.06);
+  }
+  .wa-fab__btn:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 4px;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .wa-fab__btn::after {
+      content: '';
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: 2px solid #25d366;
+      animation: wa-pulse 2.4s var(--ease) 3;
+      pointer-events: none;
+    }
+    @keyframes wa-pulse {
+      from {
+        transform: scale(1);
+        opacity: 0.8;
+      }
+      to {
+        transform: scale(1.6);
+        opacity: 0;
+      }
+    }
+  }
+  .wa-fab__bubble {
+    position: relative;
+    width: min(17.5rem, calc(100vw - 2rem));
+    padding: 1rem 1.1rem 1rem;
+    border-radius: 16px 16px 4px 16px;
+    background: var(--white);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-lg);
+  }
+  .wa-fab__bubble[hidden] {
+    display: none;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .wa-fab__bubble:not([hidden]) {
+      animation: bubble-in 320ms var(--ease);
+    }
+    @keyframes bubble-in {
+      from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.97);
+      }
+    }
+  }
+  .wa-fab__title {
+    margin: 0 1.75rem 0.25rem 0;
+    font-family: var(--font-display);
+    font-weight: 800;
+    color: var(--navy);
+  }
+  .wa-fab__text {
+    margin: 0 0 0.6rem;
+    font-size: 0.925rem;
+    line-height: 1.45;
+    color: var(--ink);
+  }
+  .wa-fab__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 36px;
+    font-weight: 700;
+    color: var(--success);
+  }
+  .wa-fab__close {
+    position: absolute;
+    top: 0.4rem;
+    right: 0.4rem;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .wa-fab__close:hover {
+    background: var(--sky);
+  }
+  /* Phones: sit above the bottom contact bar. */
+  @media (max-width: 767px) {
+    .wa-fab {
+      bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
+    }
+    .wa-fab__btn {
+      width: 56px;
+      height: 56px;
+    }
+  }
+  /* Phones: the button appears once the visitor scrolls past the top of the page, so it never
+     covers the hero (the bottom bar already offers the consultation there). */
+  @media (max-width: 767px) {
+    :global(.js) .wa-fab.is-tucked {
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(12px);
+    }
+    .wa-fab {
+      transition:
+        opacity var(--dur) var(--ease),
+        transform var(--dur) var(--ease),
+        visibility 0s;
+    }
+  }
+  :global(body.no-mobile-bar) .wa-fab {
+    bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+  }
+</style>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-wa-fab]');
+  const bubble = root?.querySelector<HTMLElement>('[data-wa-bubble]');
+  const KEY = 'fos-wa-bubble-closed';
+  const closed = () => {
+    try {
+      return sessionStorage.getItem(KEY) === '1';
+    } catch {
+      return false;
+    }
+  };
+  const close = () => {
+    if (bubble) bubble.hidden = true;
+    try {
+      sessionStorage.setItem(KEY, '1');
+    } catch {
+      /* storage unavailable: the bubble simply returns on the next page */
+    }
+  };
+  if (root) {
+    // Phones: reveal the button after the first screen. Larger screens show it straight away.
+    const phone = matchMedia('(max-width: 767px)');
+    const update = () => root.classList.toggle('is-tucked', phone.matches && window.scrollY < window.innerHeight * 0.6);
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    phone.addEventListener('change', update);
+  }
+  if (root) {
+    // Hosting badges pinned to the same corner (Netlify's "Powered by Netlify" on free review sites)
+    // would sit on top of the button: when one appears, lift the button above it.
+    let tries = 0;
+    const lift = () => {
+      const badge = document.getElementById('nl-badge-frame');
+      const r = badge?.getBoundingClientRect();
+      if (r && r.height > 0 && r.right > window.innerWidth - 100) {
+        const base = parseFloat(getComputedStyle(root).bottom) || 0;
+        const needed = window.innerHeight - r.top + 12;
+        if (needed > base) root.style.bottom = `${Math.round(needed)}px`;
+      } else if (++tries < 20) {
+        window.setTimeout(lift, 500);
+      }
+    };
+    lift();
+  }
+  if (root && bubble && !closed()) {
+    // Show the greeting after a short pause, once the visitor has had time to look around.
+    window.setTimeout(() => {
+      if (!closed() && !root.classList.contains('is-tucked')) bubble.hidden = false;
+    }, 6000);
+    root.querySelector('[data-wa-close]')?.addEventListener('click', close);
+    root.querySelectorAll('[data-inquiry]').forEach((a) => a.addEventListener('click', close));
+  }
+</script>

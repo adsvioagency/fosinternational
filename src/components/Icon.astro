@@ -1,0 +1,82 @@
+---
+// Inline SVG icons rendered at build time (no client cost).
+// Lucide (ISC) for interface icons, Simple Icons (CC0) for platform marks.
+import phone from 'lucide-static/icons/phone.svg?raw';
+import message from 'lucide-static/icons/message-circle.svg?raw';
+import list from 'lucide-static/icons/list-checks.svg?raw';
+import languages from 'lucide-static/icons/languages.svg?raw';
+import users from 'lucide-static/icons/users.svg?raw';
+import heart from 'lucide-static/icons/heart.svg?raw';
+import plane from 'lucide-static/icons/plane.svg?raw';
+import passport from 'lucide-static/icons/book-user.svg?raw';
+import file from 'lucide-static/icons/file-text.svg?raw';
+import stamp from 'lucide-static/icons/stamp.svg?raw';
+import award from 'lucide-static/icons/award.svg?raw';
+import pen from 'lucide-static/icons/pen-line.svg?raw';
+import graduation from 'lucide-static/icons/graduation-cap.svg?raw';
+import home from 'lucide-static/icons/house.svg?raw';
+import briefcase from 'lucide-static/icons/briefcase.svg?raw';
+import globe from 'lucide-static/icons/globe.svg?raw';
+import map from 'lucide-static/icons/map.svg?raw';
+import mapPin from 'lucide-static/icons/map-pin.svg?raw';
+import clock from 'lucide-static/icons/clock.svg?raw';
+import arrowRight from 'lucide-static/icons/arrow-right.svg?raw';
+import arrowUpRight from 'lucide-static/icons/arrow-up-right.svg?raw';
+import check from 'lucide-static/icons/check.svg?raw';
+import chevronDown from 'lucide-static/icons/chevron-down.svg?raw';
+import menu from 'lucide-static/icons/menu.svg?raw';
+import x from 'lucide-static/icons/x.svg?raw';
+import copy from 'lucide-static/icons/copy.svg?raw';
+import mail from 'lucide-static/icons/mail.svg?raw';
+import info from 'lucide-static/icons/info.svg?raw';
+import alert from 'lucide-static/icons/circle-alert.svg?raw';
+import help from 'lucide-static/icons/circle-help.svg?raw';
+import pencil from 'lucide-static/icons/pencil.svg?raw';
+import play from 'lucide-static/icons/play.svg?raw';
+import quote from 'lucide-static/icons/quote.svg?raw';
+import book from 'lucide-static/icons/book-open.svg?raw';
+import calendar from 'lucide-static/icons/calendar.svg?raw';
+import shield from 'lucide-static/icons/shield-check.svg?raw';
+import user from 'lucide-static/icons/user.svg?raw';
+import pause from 'lucide-static/icons/pause.svg?raw';
+import devices from 'lucide-static/icons/monitor-smartphone.svg?raw';
+import whatsapp from 'simple-icons/icons/whatsapp.svg?raw';
+import tiktok from 'simple-icons/icons/tiktok.svg?raw';
+import facebook from 'simple-icons/icons/facebook.svg?raw';
+import youtube from 'simple-icons/icons/youtube.svg?raw';
+
+const lucide = {
+  phone, message, list, languages, users, heart, plane, passport, file, stamp, award, pen, graduation, home,
+  briefcase, globe, map, mapPin, clock, arrowRight, arrowUpRight, check, chevronDown, menu, x, copy, mail, info,
+  alert, help, pencil, play, quote, book, calendar, shield, user, pause, devices,
+};
+const brands = { whatsapp, tiktok, facebook, youtube };
+
+export type Name = keyof typeof lucide | keyof typeof brands;
+
+interface Props {
+  name: Name;
+  size?: number;
+  class?: string;
+  label?: string;
+}
+
+const { name, size = 20, class: className = '', label } = Astro.props;
+const raw: string = (lucide as Record<string, string>)[name] ?? (brands as Record<string, string>)[name];
+if (!raw) throw new Error(`Unknown icon: ${name}`);
+const isBrand = name in brands;
+
+const inner = raw
+  .replace(/<!--[\s\S]*?-->/g, '')
+  .replace(/<title>[\s\S]*?<\/title>/g, '')
+  .replace(/^[\s\S]*?<svg[^>]*>/, '')
+  .replace(/<\/svg>\s*$/, '');
+
+const a11y = label ? `role="img" aria-label="${label.replace(/"/g, '&quot;')}"` : 'aria-hidden="true" focusable="false"';
+const attrs = isBrand
+  ? `viewBox="0 0 24 24" fill="currentColor"`
+  : `viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"`;
+const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" ${attrs} class="icon ${className}" ${a11y}>${inner}</svg>`;
+---
+
+<Fragment set:html={svg} />

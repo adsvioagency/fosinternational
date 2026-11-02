@@ -1,0 +1,328 @@
+---
+// Address, landmark, hours table, appointment rule and optional office status.
+import Icon from './Icon.astro';
+import { business, addressLine, directionsUrl, mapEmbedUrl } from '../config/business';
+import type { Lang } from '../content/types';
+import { t, formatTime } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+  showStatus?: boolean;
+  compact?: boolean;
+  /** Hide phone/email when the page already lists them. */
+  showContacts?: boolean;
+  /** Lazy-loaded Google Maps embed of the address. */
+  showMap?: boolean;
+}
+const { lang, showStatus = true, compact = false, showContacts = true, showMap = true } = Astro.props;
+const d = t(lang);
+const fmt = (hhmm: string) => formatTime(hhmm, lang);
+const rows = d.hours.days.map((name, i) => {
+  const slot = business.hours.find((h) => (h.days as readonly number[]).includes(i + 1));
+  return { name, value: slot ? `${fmt(slot.opens)} – ${fmt(slot.closes)}` : d.hours.closed, open: !!slot };
+});
+---
+
+<div class:list={['office', { 'office--compact': compact }]}>
+  <div class="office__main">
+  <dl class="office__facts">
+    <div>
+      <dt><Icon name="mapPin" size={18} /> {d.office.address}</dt>
+      <dd>
+        <a class="office__address" href={directionsUrl()} target="_blank" rel="noopener">
+          <span>{addressLine(lang)}</span>
+          <span class="office__address-hint">{d.office.openInMaps} <Icon name="arrowUpRight" size={16} /></span>
+          <span class="visually-hidden">{d.videos.external}</span>
+        </a>
+        <span class="office__landmark">{d.office.landmark}{d.sep}{business.landmark[lang]}</span>
+      </dd>
+    </div>
+    {showContacts && (
+    <>
+    <div>
+      <dt><Icon name="phone" size={18} /> {d.office.phone}</dt>
+      <dd>
+        <a href={business.phone.tel} class="office__phone">{business.phone.display}</a>
+      </dd>
+    </div>
+    <div>
+      <dt><Icon name="mail" size={18} /> {d.office.email}</dt>
+      <dd><a href={`mailto:${business.email}`}>{business.email}</a></dd>
+    </div>
+    </>
+    )}
+  </dl>
+
+  {
+    showMap && (
+      <figure class="office__map">
+        <iframe
+          src={mapEmbedUrl(lang)}
+          title={d.office.mapTitle}
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+          allowfullscreen></iframe>
+        <figcaption>
+          <Icon name="info" size={14} /> {d.office.mapNote}
+        </figcaption>
+      </figure>
+    )
+  }
+  </div>
+
+  <div class="office__hours">
+    <h3 class="office__hours-title">
+      <Icon name="clock" size={20} />
+      {d.hours.title}
+    </h3>
+    <table>
+      <caption class="visually-hidden">{d.hours.title} — {d.hours.tz}</caption>
+      <tbody>
+        {
+          rows.map((r) => (
+            <tr class:list={{ 'is-closed': !r.open }}>
+              <th scope="row">{r.name}</th>
+              <td>{r.value}</td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+    <p class="office__tz">{d.hours.tz}</p>
+    <p class="office__appt"><Icon name="calendar" size={18} /> {d.hours.appointment}</p>
+    {
+      showStatus && (
+        <p
+          class="office__status"
+          data-office-status
+          hidden
+          data-open={d.hours.statusOpen}
+          data-closed={d.hours.statusClosed}
+          data-hours={JSON.stringify(business.hours)}
+          data-tz={business.timeZone}
+        >
+          <span class="office__dot" aria-hidden="true" />
+          <span data-status-text />
+          <span class="office__status-note">{d.hours.statusNote}</span>
+        </p>
+      )
+    }
+  </div>
+</div>
+
+<style>
+  .office {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: clamp(1.5rem, 1rem + 3vw, 3rem);
+  }
+  .office--compact {
+    grid-template-columns: 1fr;
+  }
+  .office__main {
+    display: grid;
+    gap: 1.75rem;
+    align-content: start;
+    min-width: 0;
+  }
+  .office__facts {
+    margin: 0;
+    display: grid;
+    gap: 1.5rem;
+    align-content: start;
+  }
+  /* The address itself is the main link to Google Maps. */
+  .office__address {
+    display: grid;
+    gap: 0.3rem;
+    padding: 0.85rem 1rem;
+    margin: 0.15rem 0 0.25rem;
+    background: var(--sky);
+    border: 1px solid var(--sky-200);
+    border-left: 3px solid var(--red);
+    border-radius: var(--radius-sm);
+    color: var(--navy);
+    font-weight: 600;
+    text-decoration: none;
+    line-height: 1.45;
+    transition:
+      background-color var(--dur) var(--ease),
+      border-color var(--dur) var(--ease);
+  }
+  .office__address:hover {
+    background: var(--sky-200);
+  }
+  .office__address-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--red-700);
+    text-decoration: underline;
+    text-underline-offset: 0.18em;
+  }
+  .office__map {
+    margin: 0;
+  }
+  .office__map iframe {
+    display: block;
+    width: 100%;
+    height: clamp(240px, 32vw, 340px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--sky);
+  }
+  .office__map figcaption {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  dt {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-display);
+    font-weight: 800;
+    color: var(--navy);
+    margin-bottom: 0.35rem;
+  }
+  dt :global(.icon) {
+    color: var(--red);
+  }
+  dd {
+    margin: 0;
+    display: grid;
+    gap: 0.25rem;
+    justify-items: start;
+  }
+  .office__landmark {
+    color: var(--muted);
+  }
+  .office__phone {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 1.25rem;
+    color: var(--navy);
+    text-decoration: none;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .office__phone:hover {
+    text-decoration: underline;
+  }
+  dd a[href^='mailto'] {
+    overflow-wrap: anywhere;
+  }
+  .office__hours {
+    align-self: start;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+  }
+  .office__hours-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.1rem;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  th,
+  td {
+    text-align: left;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid var(--border);
+    font-weight: 400;
+  }
+  th {
+    font-weight: 600;
+  }
+  td {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .is-closed {
+    color: var(--muted);
+  }
+  .office__tz {
+    font-size: 0.875rem;
+    color: var(--muted);
+    margin: 0.6rem 0 1rem;
+  }
+  .office__appt {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+    font-weight: 600;
+    color: var(--navy);
+    margin: 0;
+  }
+  .office__appt :global(.icon) {
+    margin-top: 0.2rem;
+    flex: none;
+  }
+  .office__status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 0.5rem;
+    margin: 1rem 0 0;
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  .office__status-note {
+    flex-basis: 100%;
+    font-weight: 400;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+  .office__dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--muted);
+  }
+  .office__status.is-open .office__dot {
+    background: var(--success);
+  }
+  @media (max-width: 899px) {
+    .office {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+  // Office open/closed, computed in America/Santo_Domingo regardless of the visitor's time zone.
+  document.querySelectorAll<HTMLElement>('[data-office-status]').forEach((el) => {
+    try {
+      const hours: { days: number[]; opens: string; closes: string }[] = JSON.parse(el.dataset.hours ?? '[]');
+      const parts = new Intl.DateTimeFormat('en-GB', {
+        timeZone: el.dataset.tz,
+        weekday: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+        hourCycle: 'h23',
+      }).formatToParts(new Date());
+      const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '';
+      const day = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(get('weekday')) + 1;
+      const now = Number(get('hour')) * 60 + Number(get('minute'));
+      const toMin = (s: string) => Number(s.slice(0, 2)) * 60 + Number(s.slice(3, 5));
+      const open = hours.some((h) => h.days.includes(day) && now >= toMin(h.opens) && now < toMin(h.closes));
+      el.classList.toggle('is-open', open);
+      const text = el.querySelector('[data-status-text]');
+      if (text) text.textContent = (open ? el.dataset.open : el.dataset.closed) ?? '';
+      if (day > 0) el.hidden = false;
+    } catch {
+      /* leave the static hours table as the source of truth */
+    }
+  });
+</script>

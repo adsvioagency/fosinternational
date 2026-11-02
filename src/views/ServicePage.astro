@@ -1,0 +1,467 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHero from '../components/PageHero.astro';
+import Icon from '../components/Icon.astro';
+import Faq from '../components/Faq.astro';
+import UsNotice from '../components/UsNotice.astro';
+import CtaBand from '../components/CtaBand.astro';
+import ServiceCard from '../components/ServiceCard.astro';
+import VideoCard from '../components/VideoCard.astro';
+import { business } from '../config/business';
+import type { Lang, Service } from '../content/types';
+import { serviceById } from '../content/services/index';
+import { resourceById } from '../content/resources';
+import { pathFor, contactPath, type PageId } from '../i18n/routes';
+import { t, typo, formatDate } from '../i18n/ui';
+import { faqNode, serviceNode } from '../lib/seo';
+import { isCountry } from '../lib/flags';
+import { videos } from '../content/social-proof';
+import { publishable } from '../lib/publish';
+
+interface Props {
+  lang: Lang;
+  service: Service;
+}
+const { lang, service } = Astro.props;
+const d = t(lang);
+const c = service[lang];
+const pageId = `service:${service.id}` as PageId;
+const crumbs = [
+  { name: d.breadcrumbHome, path: pathFor('home', lang) },
+  { name: d.service.breadcrumb, path: pathFor('services', lang) },
+  { name: c.label, path: pathFor(pageId, lang) },
+];
+const related = service.related.map((id) => serviceById.get(id)).filter((s): s is Service => !!s);
+const guides = service.relatedResources.map((id) => resourceById.get(id)).filter((r) => !!r);
+const schema = [serviceNode({ pageId, lang, name: c.h1, description: c.metaDescription }), faqNode(c.faqs)];
+// Country pages show the destination's flag; the eyebrow then names the country itself.
+const countries = service.destinations.filter(isCountry);
+const eyebrow = countries.length ? countries.map((x) => d.countries[x]).join(', ') : d.groups[service.group];
+const serviceVideos = publishable(videos).filter((v) => v.relatedService === service.id && v.kind === 'explainer');
+---
+
+<Base lang={lang} pageId={pageId} title={c.metaTitle} description={c.metaDescription} crumbs={crumbs} schema={schema}>
+  <PageHero crumbs={crumbs} crumbLabel={d.breadcrumbAria} eyebrow={eyebrow} title={typo(c.h1, lang)} flags={countries}>
+    {c.intro.map((p, i) => <p class={i === 0 ? 'lead' : 'svc-intro'}>{typo(p, lang)}</p>)}
+    <div class="btn-row svc-hero-ctas">
+      <a class="btn btn--primary" href={contactPath(lang, service.id)} data-inquiry>{d.cta.askAbout} <Icon name="arrowRight" size={18} /></a>
+      <a class="btn btn--secondary" href={business.phone.tel}><Icon name="phone" size={18} /> {business.phone.display}</a>
+    </div>
+    {
+      serviceVideos.length > 1 && (
+        <p class="svc-hero-videos">
+          <a class="arrow-link" href="#videos"><Icon name="play" size={18} /> {d.service.watchVideos}</a>
+        </p>
+      )
+    }
+  </PageHero>
+
+  <div class="container svc-layout">
+    <article class="svc-main">
+      {
+        service.usRestrictionNotice && (
+          <div class="svc-block">
+            <UsNotice lang={lang} />
+          </div>
+        )
+      }
+
+      <section class="svc-block" aria-labelledby="who">
+        <h2 id="who">{d.service.forWho}</h2>
+        <ul class="check-list">
+          {c.forWho.map((x) => <li><Icon name="check" size={18} /><span>{typo(x, lang)}</span></li>)}
+        </ul>
+      </section>
+
+      <section class="svc-block" aria-labelledby="what">
+        <h2 id="what">{d.service.whatItIs}</h2>
+        {c.whatItIs.map((p) => <p>{typo(p, lang)}</p>)}
+      </section>
+
+      <section class="svc-block" aria-labelledby="how">
+        <h2 id="how">{d.service.howWeHelp}</h2>
+        <ul class="help-list">
+          {c.howWeHelp.map((x) => <li>{typo(x, lang)}</li>)}
+        </ul>
+      </section>
+
+      <section class="svc-block" aria-labelledby="expect">
+        <h2 id="expect">{d.service.steps}</h2>
+        <ol class="timeline">
+          {
+            c.steps.map((s) => (
+              <li>
+                <h3>{typo(s.title, lang)}</h3>
+                <p>{typo(s.text, lang)}</p>
+              </li>
+            ))
+          }
+        </ol>
+      </section>
+
+      <section class="svc-block prep" aria-labelledby="prepare">
+        <h2 id="prepare">{d.service.checklist}</h2>
+        <ul class="check-list">
+          {c.checklist.map((x) => <li><Icon name="file" size={18} /><span>{typo(x, lang)}</span></li>)}
+        </ul>
+        <p class="prep__note">{d.service.checklistNote}</p>
+      </section>
+
+      <section class="svc-block" aria-labelledby="faq">
+        <h2 id="faq">{d.service.faqs}</h2>
+        <Faq faqs={c.faqs} lang={lang} />
+      </section>
+
+      <section class="svc-block sources" aria-labelledby="sources">
+        <h2 id="sources">{d.service.sources}</h2>
+        {
+          service.sources.length > 0 && (
+            <>
+              <p class="sources__note">{d.service.sourcesNote}</p>
+              <ul class="sources__list">
+                {service.sources.map((s) => (
+                  <li>
+                    <a href={s.url} target="_blank" rel="noopener">
+                      {s.label}
+                      <Icon name="arrowUpRight" size={16} />
+                      <span class="visually-hidden">{d.videos.external}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )
+        }
+        {
+          guides.length > 0 && (
+            <ul class="sources__list sources__guides">
+              {guides.map((g) => (
+                <li>
+                  <a href={pathFor(`resource:${g!.id}`, lang)}>
+                    <Icon name="book" size={16} /> {g![lang].title}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )
+        }
+        <p class="general">{d.general}</p>
+        <p class="reviewed">{d.service.reviewed} <time datetime={service.reviewed}>{formatDate(service.reviewed, lang)}</time></p>
+      </section>
+    </article>
+
+    <aside class="svc-aside" aria-label={d.service.ctaTitle}>
+      <div class="svc-aside__card">
+        <p class="svc-aside__title">{d.service.ctaTitle}</p>
+        <p>{d.service.ctaText}</p>
+        <a class="btn btn--primary btn--block" href={contactPath(lang, service.id)} data-inquiry>{d.cta.consult}</a>
+        <a class="btn btn--secondary btn--block" href={business.phone.tel}><Icon name="phone" size={18} /> {d.cta.call}</a>
+        <p class="svc-aside__hours"><Icon name="calendar" size={16} /> {d.utility.officeHours}</p>
+      </div>
+      <nav class="svc-aside__toc" aria-label={c.label}>
+        <ul>
+          <li><a href="#who">{d.service.forWho.replace('…', '')}</a></li>
+          <li><a href="#how">{d.service.howWeHelp}</a></li>
+          <li><a href="#prepare">{d.service.checklist}</a></li>
+          <li><a href="#faq">{d.service.faqs}</a></li>
+        </ul>
+      </nav>
+    </aside>
+  </div>
+
+  {
+    serviceVideos.length > 0 && (
+      <section class="section section--cool svc-videos" id="videos" aria-labelledby="videos-title">
+        <div class="container">
+          <div class="svc-videos__head">
+            <div class="section-head">
+              <h2 id="videos-title">{d.service.videosTitle}</h2>
+              <p>{d.service.videosLead}</p>
+            </div>
+            {service.socialLink && (
+              <a class="btn btn--secondary svc-videos__follow" href={service.socialLink.url} target="_blank" rel="noopener">
+                <Icon name="tiktok" size={18} />
+                {d.service.followOn(service.socialLink.label)}
+                <span class="visually-hidden">{d.videos.external}</span>
+              </a>
+            )}
+          </div>
+          <ul class="svc-videos__list" role="list">
+            {serviceVideos.map((v) => (
+              <li>
+                <VideoCard video={v} lang={lang} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+    )
+  }
+
+  <section class="section section--alt" aria-labelledby="related">
+    <div class="container">
+      <h2 id="related" class="related__title">{d.service.related}</h2>
+      <ul class="related" role="list">
+        {related.map((s) => <li><ServiceCard service={s} lang={lang} /></li>)}
+      </ul>
+    </div>
+  </section>
+
+  <CtaBand lang={lang} title={d.service.ctaTitle} text={d.service.ctaText} serviceId={service.id} />
+</Base>
+
+<style>
+  .svc-intro {
+    max-width: 44rem;
+  }
+  .svc-hero-ctas {
+    margin-top: 1.75rem;
+  }
+  .svc-hero-videos {
+    margin: 1.25rem 0 0;
+  }
+  .svc-videos__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    justify-content: space-between;
+    gap: 1rem 2rem;
+    margin-bottom: 1.5rem;
+  }
+  .svc-videos__head .section-head {
+    margin-bottom: 0;
+  }
+  .svc-videos__follow {
+    flex: none;
+  }
+  .svc-videos__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+    gap: 1rem;
+  }
+  /* Phones: a swipeable row instead of tall cards stacked one after another. */
+  @media (max-width: 639px) {
+    .svc-videos__list {
+      grid-template-columns: none;
+      grid-auto-flow: column;
+      grid-auto-columns: 82%;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      padding-bottom: 0.5rem;
+      margin-inline: calc(var(--gutter) * -1);
+      padding-inline: var(--gutter);
+      scroll-padding-inline: var(--gutter);
+    }
+    .svc-videos__list > li {
+      position: relative;
+      scroll-snap-align: start;
+    }
+    .svc-videos__list:has(> li:only-child) {
+      grid-auto-columns: 100%;
+    }
+  }
+  .svc-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 20rem;
+    gap: clamp(2rem, 1rem + 4vw, 5rem);
+    padding-block: clamp(2.5rem, 2rem + 2vw, 4rem);
+    align-items: start;
+  }
+  .svc-main {
+    max-width: 46rem;
+  }
+  .svc-block + .svc-block {
+    margin-top: clamp(2.25rem, 2rem + 1.5vw, 3.25rem);
+  }
+  .svc-block h2 {
+    font-size: var(--step-2);
+  }
+  .help-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 0.6rem;
+  }
+  .help-list li {
+    position: relative;
+    padding-left: 1.5rem;
+  }
+  .help-list li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.65em;
+    width: 0.6rem;
+    height: 2px;
+    background: var(--red);
+  }
+  .timeline {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    counter-reset: step;
+    display: grid;
+    gap: 0;
+  }
+  .timeline li {
+    position: relative;
+    counter-increment: step;
+    padding: 0 0 1.5rem 3.25rem;
+  }
+  .timeline li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    background: var(--white);
+    border: 2px solid var(--navy);
+    color: var(--navy);
+    font-family: var(--font-display);
+    font-weight: 800;
+  }
+  .timeline li:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: calc(1.125rem - 1px);
+    top: 2.5rem;
+    bottom: 0.25rem;
+    border-left: 2px dashed rgb(193 20 24 / 0.5);
+  }
+  .timeline h3 {
+    font-size: 1.1rem;
+    margin: 0.35rem 0 0.25rem;
+  }
+  .timeline p {
+    margin: 0;
+    color: var(--ink);
+  }
+  .prep {
+    background: var(--sky);
+    border-radius: var(--radius-lg);
+    padding: clamp(1.25rem, 1rem + 1.5vw, 2rem);
+  }
+  .prep :global(.check-list .icon) {
+    color: var(--navy);
+  }
+  .prep__note {
+    margin: 1.25rem 0 0;
+    font-size: 0.95rem;
+    color: var(--muted);
+  }
+  .sources__note {
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+  .sources__list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1rem;
+    display: grid;
+    gap: 0.25rem;
+  }
+  .sources__list a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 40px;
+    font-weight: 600;
+  }
+  .general {
+    font-size: 0.95rem;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    padding-top: 1rem;
+  }
+  .reviewed {
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin: 0;
+  }
+  .svc-aside {
+    position: sticky;
+    top: calc(var(--header-h) + 1.5rem);
+    display: grid;
+    gap: 1.25rem;
+  }
+  .svc-aside__card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-top: 4px solid var(--red);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    display: grid;
+    gap: 0.75rem;
+    box-shadow: var(--shadow);
+  }
+  .svc-aside__card p {
+    margin: 0;
+  }
+  .svc-aside__title {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 1.2rem;
+    color: var(--navy);
+  }
+  .svc-aside__hours {
+    display: flex;
+    gap: 0.4rem;
+    font-size: 0.875rem;
+    color: var(--muted);
+  }
+  .svc-aside__hours :global(.icon) {
+    margin-top: 0.2rem;
+    flex: none;
+  }
+  .svc-aside__toc ul {
+    list-style: none;
+    padding: 0 0 0 1rem;
+    margin: 0;
+    border-left: 2px solid var(--border);
+  }
+  .svc-aside__toc a {
+    display: flex;
+    align-items: center;
+    min-height: 40px;
+    color: var(--muted);
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .svc-aside__toc a:hover {
+    color: var(--navy);
+    text-decoration: underline;
+  }
+  .related__title {
+    font-size: var(--step-2);
+  }
+  .related {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+  @media (max-width: 1023px) {
+    .svc-layout {
+      grid-template-columns: 1fr;
+    }
+    .svc-aside {
+      position: static;
+    }
+    .svc-aside__toc {
+      display: none;
+    }
+    .related {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

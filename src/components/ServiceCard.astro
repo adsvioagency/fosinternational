@@ -1,0 +1,122 @@
+---
+import Icon from './Icon.astro';
+import type { Lang, Service } from '../content/types';
+import { pathFor } from '../i18n/routes';
+import { t, typo } from '../i18n/ui';
+interface Props {
+  service: Service;
+  lang: Lang;
+  headingLevel?: 'h2' | 'h3';
+}
+const { service: s, lang, headingLevel = 'h3' } = Astro.props;
+const d = t(lang);
+const H = headingLevel;
+const destLabel = s.destinations.map((x) => d.finder.destinations[x]).join(' · ');
+---
+
+<article
+  class="svc-card"
+  data-service-card
+  data-destinations={s.destinations.join(' ')}
+  data-needs={s.needs.join(' ')}
+>
+  <div class="svc-card__top">
+    <span class="svc-card__icon"><Icon name={s.icon} size={22} /></span>
+    <span class="svc-card__dest">{destLabel}</span>
+  </div>
+  <H class="svc-card__title">
+    <a href={pathFor(`service:${s.id}`, lang)} class="svc-card__link">{typo(s[lang].label, lang)}</a>
+  </H>
+  <p class="svc-card__text">{typo(s[lang].summary, lang)}</p>
+  <span class="svc-card__more" aria-hidden="true">{d.cta.learnMore} <Icon name="arrowRight" size={18} /></span>
+</article>
+
+<style>
+  .svc-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.4rem 1.4rem 1.2rem;
+    transition:
+      border-color var(--dur) var(--ease),
+      box-shadow var(--dur) var(--ease),
+      transform var(--dur) var(--ease);
+    height: 100%;
+  }
+  .svc-card:hover {
+    border-color: var(--navy);
+    box-shadow: var(--shadow);
+    transform: translateY(-2px);
+  }
+  .svc-card:focus-within {
+    border-color: var(--navy);
+  }
+  .svc-card__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .svc-card__icon {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: var(--sky);
+    color: var(--navy);
+  }
+  .svc-card__dest {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-align: right;
+  }
+  .svc-card__title {
+    font-size: 1.15rem;
+    margin: 0.4rem 0 0;
+  }
+  .svc-card__link {
+    color: var(--navy);
+    text-decoration: none;
+  }
+  /* Whole card is the click target via the heading link. */
+  .svc-card__link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius);
+  }
+  .svc-card__link:focus-visible {
+    outline: none;
+  }
+  .svc-card__link:focus-visible::after {
+    outline: 3px solid var(--focus);
+    outline-offset: 3px;
+  }
+  .svc-card__text {
+    color: var(--muted);
+    margin: 0;
+    flex: 1;
+  }
+  .svc-card__more {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: var(--red-700);
+    margin-top: 0.4rem;
+    font-size: 0.95rem;
+  }
+  .svc-card:hover .svc-card__more :global(.icon) {
+    transform: translateX(3px);
+  }
+  .svc-card__more :global(.icon) {
+    transition: transform var(--dur) var(--ease);
+  }
+</style>

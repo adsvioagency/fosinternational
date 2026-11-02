@@ -1,0 +1,169 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHero from '../components/PageHero.astro';
+import Icon from '../components/Icon.astro';
+import InquiryForm from '../components/InquiryForm.astro';
+import ContactSteps from '../components/ContactSteps.astro';
+import OfficeInfo from '../components/OfficeInfo.astro';
+import { business } from '../config/business';
+import type { Lang } from '../content/types';
+import { pathFor } from '../i18n/routes';
+import { t } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const d = t(lang);
+const c = d.contact;
+const crumbs = [
+  { name: d.breadcrumbHome, path: pathFor('home', lang) },
+  { name: d.nav.contact, path: pathFor('contact', lang) },
+];
+---
+
+<Base lang={lang} pageId="contact" title={c.metaTitle} description={c.metaDescription} crumbs={crumbs} inlineForm>
+  <PageHero crumbs={crumbs} crumbLabel={d.breadcrumbAria} eyebrow={c.eyebrow} title={c.h1} lead={c.lead} tone="cool" />
+
+  <section class="section contact" aria-label={c.h1}>
+    <div class="container contact__grid">
+      <div class="contact__form" id="inquiry" data-page-form>
+        <noscript>
+          <p class="nojs">
+            {c.noJs} <a href={business.phone.tel}>{business.phone.display}</a>.
+            <br />
+            <a href={business.whatsapp.base}>WhatsApp</a>
+          </p>
+        </noscript>
+        <InquiryForm lang={lang} idPrefix="page" />
+      </div>
+
+      <aside class="contact__aside" aria-labelledby="other-ways">
+        <h2 id="other-ways">{c.otherWays}</h2>
+        <ul class="ways">
+          <li>
+            <a href={business.phone.tel} class="way">
+              <span class="way__icon"><Icon name="phone" size={22} /></span>
+              <span><span class="way__label">{d.cta.call}</span><span class="way__value">{business.phone.display}</span></span>
+            </a>
+          </li>
+          <li>
+            <a href={business.whatsapp.base} target="_blank" rel="noopener" class="way">
+              <span class="way__icon way__icon--wa"><Icon name="whatsapp" size={22} /></span>
+              <span><span class="way__label">WhatsApp</span><span class="way__value">{d.cta.whatsappDirect}</span></span>
+            </a>
+          </li>
+          <li>
+            <a href={`mailto:${business.email}`} class="way">
+              <span class="way__icon"><Icon name="mail" size={22} /></span>
+              <span><span class="way__label">{d.office.email}</span><span class="way__value">{business.email}</span></span>
+            </a>
+          </li>
+        </ul>
+        <p class="messaging">{d.messaging}</p>
+        <OfficeInfo lang={lang} compact showContacts={false} />
+      </aside>
+    </div>
+  </section>
+
+  <ContactSteps lang={lang} />
+</Base>
+
+<style>
+  .contact__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    gap: clamp(2rem, 1rem + 4vw, 4.5rem);
+    align-items: start;
+  }
+  .contact__form {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: clamp(1.25rem, 1rem + 2vw, 2.25rem);
+    box-shadow: var(--shadow);
+  }
+  .nojs {
+    background: var(--sky);
+    border-radius: var(--radius);
+    padding: 1rem;
+    font-weight: 600;
+  }
+  .contact__aside h2 {
+    font-size: var(--step-2);
+  }
+  .ways {
+    list-style: none;
+    margin: 0 0 1rem;
+    padding: 0;
+    display: grid;
+    gap: 0.6rem;
+  }
+  .way {
+    display: grid;
+    grid-template-columns: 48px 1fr;
+    gap: 0.9rem;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    text-decoration: none;
+    color: var(--ink);
+    min-height: 64px;
+  }
+  .way:hover {
+    border-color: var(--navy);
+  }
+  .way > span:last-child {
+    display: grid;
+    min-width: 0;
+  }
+  .way__icon {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: var(--sky);
+    color: var(--navy);
+  }
+  .way__icon--wa {
+    color: var(--whatsapp);
+  }
+  .way__label {
+    font-family: var(--font-display);
+    font-weight: 800;
+    color: var(--navy);
+  }
+  .way__value {
+    color: var(--muted);
+    overflow-wrap: anywhere;
+  }
+  .messaging {
+    font-size: 0.95rem;
+    color: var(--muted);
+    margin-bottom: 1.5rem;
+  }
+  @media (max-width: 899px) {
+    .contact__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+  // On this page, consultation links focus the inline form instead of opening the dialog.
+  import { getController, initInquiryForms } from '../scripts/inquiry';
+  initInquiryForms();
+  const root = document.querySelector<HTMLElement>('[data-page-form] [data-inquiry-form]');
+  document.addEventListener('click', (e) => {
+    const link = (e.target as HTMLElement).closest<HTMLAnchorElement>('a[data-inquiry]');
+    if (!link || !root || e.metaKey || e.ctrlKey || e.shiftKey) return;
+    e.preventDefault();
+    const service = new URL(link.href, window.location.href).searchParams.get('service');
+    const ctrl = getController(root);
+    if (service) ctrl?.setService(service);
+    document.getElementById('inquiry')?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    ctrl?.focusFirst();
+  });
+</script>

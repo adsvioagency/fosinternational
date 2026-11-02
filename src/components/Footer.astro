@@ -1,0 +1,242 @@
+---
+import { Image } from 'astro:assets';
+import Icon from './Icon.astro';
+import LangSwitch from './LangSwitch.astro';
+import logo from '../assets/photos/logo-official.jpg';
+import { business, addressLine, directionsUrl } from '../config/business';
+import type { Lang } from '../content/types';
+import { homeServices } from '../content/services/index';
+import { pathFor, type PageId } from '../i18n/routes';
+import { t } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+  pageId: PageId;
+}
+const { lang, pageId } = Astro.props;
+const d = t(lang);
+const year = 2026;
+---
+
+<footer class="site-footer on-dark">
+  <div class="container footer__grid">
+    <div class="footer__brand">
+      <div class="footer__logo">
+        <Image src={logo} alt={d.about.logoAlt} width={132} height={132} loading="lazy" />
+      </div>
+      <p>{d.footer.tagline}</p>
+      <p class="footer__follow-title">{d.footer.followTitle}</p>
+      <ul class="footer__social">
+        {
+          business.socials.map((s) => (
+            <li>
+              <a href={s.url} rel="noopener" target="_blank" aria-label={`${s.label} ${d.videos.external}`}>
+                <Icon name={s.id} size={20} />
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+      <p class="footer__follow-title">{d.footer.languagesTitle}</p>
+      <LangSwitch lang={lang} pageId={pageId} variant="footer" />
+    </div>
+
+    <div>
+      <p class="footer__title">{d.footer.navTitle}</p>
+      <ul class="footer__links">
+        <li><a href={pathFor('home', lang)}>{d.nav.home}</a></li>
+        <li><a href={pathFor('services', lang)}>{d.nav.services}</a></li>
+        <li><a href={pathFor('about', lang)}>{d.nav.about}</a></li>
+        <li><a href={pathFor('resources', lang)}>{d.nav.resources}</a></li>
+        <li><a href={pathFor('testimonials', lang)}>{d.nav.testimonials}</a></li>
+        <li><a href={pathFor('contact', lang)}>{d.nav.contact}</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <p class="footer__title">{d.footer.servicesTitle}</p>
+      <ul class="footer__links">
+        {homeServices().map((s) => <li><a href={pathFor(`service:${s.id}`, lang)}>{s[lang].label}</a></li>)}
+        <li><a href={pathFor('services', lang)}>{d.nav.allServices}</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <p class="footer__title">{d.footer.contactTitle}</p>
+      <ul class="footer__contact">
+        <li>
+          <Icon name="phone" size={18} />
+          <a href={business.phone.tel}>{business.phone.display}</a>
+        </li>
+        <li>
+          <Icon name="whatsapp" size={18} />
+          <a href={business.whatsapp.base} rel="noopener" target="_blank">WhatsApp</a>
+        </li>
+        <li>
+          <Icon name="mail" size={18} />
+          <a href={`mailto:${business.email}`}>{business.email}</a>
+        </li>
+        <li>
+          <Icon name="mapPin" size={18} />
+          <span>
+            <a href={directionsUrl()} rel="noopener" target="_blank">{addressLine(lang)}<span class="visually-hidden"> — {d.office.openInMaps} {d.videos.external}</span></a><br />
+            <span class="footer__muted">{business.landmark[lang]}</span>
+          </span>
+        </li>
+        <li>
+          <Icon name="clock" size={18} />
+          <span>{d.utility.officeHours}</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="footer__bottom">
+      <p class="footer__independence">{d.footer.independence}</p>
+      <div class="footer__legal">
+        <span>© {year} {business.name} ({business.acronym}). {d.footer.rights}</span>
+        <a href={pathFor('privacy', lang)}>{d.footer.privacy}</a>
+        <a href={pathFor('legal', lang)}>{d.footer.legal}</a>
+      </div>
+      <p class="footer__credit">
+        {d.footer.credit} <a href="https://adsvioagency.com" rel="noopener" target="_blank">Adsvio Agency</a>
+      </p>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    background: var(--navy-950);
+    color: #c4d3e4;
+    padding-top: clamp(3rem, 2rem + 3vw, 4.5rem);
+    font-size: 0.975rem;
+  }
+  .footer__grid {
+    display: grid;
+    grid-template-columns: 1.3fr 0.8fr 1.1fr 1.4fr;
+    gap: clamp(2rem, 1rem + 3vw, 3.5rem);
+  }
+  .footer__logo {
+    width: 120px;
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 1.25rem;
+  }
+  .footer__logo :global(img) {
+    width: 100%;
+  }
+  .footer__title,
+  .footer__follow-title {
+    font-family: var(--font-display);
+    font-weight: 800;
+    color: var(--white);
+    margin: 0 0 0.9rem;
+  }
+  .footer__follow-title {
+    margin-top: 1.25rem;
+    font-size: 0.95rem;
+  }
+  .site-footer a {
+    color: var(--white);
+    text-decoration-color: rgb(255 255 255 / 0.35);
+  }
+  .footer__links,
+  .footer__contact,
+  .footer__social {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .footer__links li a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    text-decoration: none;
+  }
+  .footer__links li a:hover {
+    text-decoration: underline;
+  }
+  .footer__contact {
+    display: grid;
+    gap: 0.85rem;
+  }
+  .footer__contact li {
+    display: grid;
+    grid-template-columns: 1.25rem 1fr;
+    gap: 0.6rem;
+    align-items: start;
+  }
+  .footer__contact :global(.icon) {
+    margin-top: 0.2rem;
+    color: #8fa7c4;
+  }
+  .footer__contact a {
+    overflow-wrap: anywhere;
+  }
+  .footer__muted {
+    color: #9fb3cb;
+  }
+  .footer__social {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .footer__social a {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: rgb(255 255 255 / 0.08);
+  }
+  .footer__social a:hover {
+    background: rgb(255 255 255 / 0.16);
+  }
+  .footer__bottom {
+    margin-top: clamp(2.5rem, 2rem + 2vw, 3.5rem);
+    padding-block: 1.5rem 2rem;
+    border-top: 1px solid rgb(255 255 255 / 0.12);
+    display: grid;
+    gap: 0.75rem;
+    font-size: 0.875rem;
+    color: #9fb3cb;
+  }
+  .footer__independence {
+    margin: 0;
+    max-width: 60rem;
+  }
+  .footer__legal {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.25rem;
+    align-items: center;
+  }
+  .footer__legal a {
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .footer__credit {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: #8fa7c4;
+  }
+  .footer__credit a {
+    color: inherit;
+    text-decoration-color: rgb(255 255 255 / 0.3);
+  }
+  .footer__credit a:hover {
+    color: var(--white);
+  }
+  @media (max-width: 1023px) {
+    .footer__grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  @media (max-width: 599px) {
+    .footer__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

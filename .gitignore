@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.astro/
+.env
+.env.*
+!.env.example
+.netlify/
+
+# Generated review screenshots (regenerate with: node scripts/screenshots.mjs)
+docs/screenshots/

@@ -1,0 +1,139 @@
+---
+// Modal version of the inquiry form, opened by any link marked [data-inquiry].
+// Without JavaScript (or <dialog> support) those links simply open the contact page.
+import Icon from './Icon.astro';
+import InquiryForm from './InquiryForm.astro';
+import type { Lang } from '../content/types';
+import { t } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const d = t(lang);
+---
+
+<dialog class="inquiry-dialog" aria-labelledby={`dlg-title-${lang}`} data-inquiry-dialog>
+  <div class="inquiry-dialog__head">
+    <p class="inquiry-dialog__title" id={`dlg-title-${lang}`}>{d.form.dialogTitle}</p>
+    <button type="button" class="inquiry-dialog__close" data-dialog-close aria-label={d.form.closeDialog}>
+      <Icon name="x" size={22} />
+    </button>
+  </div>
+  <div class="inquiry-dialog__body">
+    <InquiryForm lang={lang} idPrefix="dlg" headingLevel="h2" />
+  </div>
+</dialog>
+
+<style>
+  .inquiry-dialog {
+    width: min(36rem, calc(100vw - 2rem));
+    max-height: calc(100dvh - 2rem);
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    color: var(--ink);
+    background: var(--white);
+    overflow: hidden;
+  }
+  .inquiry-dialog[open] {
+    display: flex;
+    flex-direction: column;
+  }
+  .inquiry-dialog::backdrop {
+    background: rgb(0 26 61 / 0.55);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .inquiry-dialog[open] {
+      animation: dlg-in 220ms var(--ease);
+    }
+    @keyframes dlg-in {
+      from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.985);
+      }
+    }
+  }
+  .inquiry-dialog__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.75rem 0.75rem 0.75rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--warm);
+  }
+  .inquiry-dialog__title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 800;
+    color: var(--navy);
+  }
+  .inquiry-dialog__close {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--navy);
+    cursor: pointer;
+  }
+  .inquiry-dialog__close:hover {
+    background: var(--sky);
+  }
+  .inquiry-dialog__body {
+    padding: 1.25rem 1.5rem 1.5rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  @media (max-width: 599px) {
+    .inquiry-dialog {
+      width: 100vw;
+      max-width: 100vw;
+      max-height: 100dvh;
+      height: 100dvh;
+      margin: 0;
+      border-radius: 0;
+    }
+    .inquiry-dialog__body {
+      padding: 1rem var(--gutter) 2rem;
+    }
+  }
+</style>
+
+<script>
+  import { getController, initInquiryForms } from '../scripts/inquiry';
+
+  const dialog = document.querySelector<HTMLDialogElement>('[data-inquiry-dialog]');
+  if (dialog && typeof dialog.showModal === 'function') {
+    initInquiryForms();
+    const formRoot = dialog.querySelector<HTMLElement>('[data-inquiry-form]')!;
+    let opener: HTMLElement | null = null;
+
+    document.addEventListener('click', (e) => {
+      const link = (e.target as HTMLElement).closest<HTMLAnchorElement>('a[data-inquiry]');
+      if (!link || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+      opener = link;
+      const service = new URL(link.href, window.location.href).searchParams.get('service');
+      const ctrl = getController(formRoot);
+      if (service) ctrl?.setService(service);
+      dialog.showModal();
+      document.documentElement.style.overflow = 'hidden';
+      requestAnimationFrame(() => ctrl?.focusFirst());
+    });
+
+    dialog.querySelector('[data-dialog-close]')?.addEventListener('click', () => dialog.close());
+    // Clicking the backdrop closes the dialog; entered details are kept for next time.
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) dialog.close();
+    });
+    dialog.addEventListener('close', () => {
+      document.documentElement.style.overflow = '';
+      opener?.focus();
+    });
+  }
+</script>

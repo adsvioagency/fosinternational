@@ -1,0 +1,44 @@
+---
+// Every localized page is generated from the locale-neutral route table in src/i18n/routes.ts.
+import type { GetStaticPaths } from 'astro';
+import HomePage from '../views/HomePage.astro';
+import AboutPage from '../views/AboutPage.astro';
+import ServicesHub from '../views/ServicesHub.astro';
+import ServicePage from '../views/ServicePage.astro';
+import ResourcesHub from '../views/ResourcesHub.astro';
+import ResourcePage from '../views/ResourcePage.astro';
+import TestimonialsPage from '../views/TestimonialsPage.astro';
+import ContactPage from '../views/ContactPage.astro';
+import LegalPage from '../views/LegalPage.astro';
+import { langs, type Lang } from '../content/types';
+import { allPageIds, pathFor, type PageId } from '../i18n/routes';
+import { serviceById } from '../content/services/index';
+import { resourceById } from '../content/resources';
+
+export const getStaticPaths = (() =>
+  langs.flatMap((lang) =>
+    allPageIds().map((pageId) => ({
+      params: { path: pathFor(pageId, lang).replace(/^\/|\/$/g, '') },
+      props: { lang, pageId },
+    }))
+  )) satisfies GetStaticPaths;
+
+interface Props {
+  lang: Lang;
+  pageId: PageId;
+}
+const { lang, pageId } = Astro.props;
+const service = pageId.startsWith('service:') ? serviceById.get(pageId.slice(8)) : undefined;
+const resource = pageId.startsWith('resource:') ? resourceById.get(pageId.slice(9)) : undefined;
+---
+
+{pageId === 'home' && <HomePage lang={lang} />}
+{pageId === 'about' && <AboutPage lang={lang} />}
+{pageId === 'services' && <ServicesHub lang={lang} />}
+{service && <ServicePage lang={lang} service={service} />}
+{pageId === 'resources' && <ResourcesHub lang={lang} />}
+{resource && <ResourcePage lang={lang} resource={resource} />}
+{pageId === 'testimonials' && <TestimonialsPage lang={lang} />}
+{pageId === 'contact' && <ContactPage lang={lang} />}
+{pageId === 'privacy' && <LegalPage lang={lang} kind="privacy" />}
+{pageId === 'legal' && <LegalPage lang={lang} kind="legal" />}

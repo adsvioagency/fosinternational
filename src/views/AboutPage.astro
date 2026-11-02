@@ -1,0 +1,550 @@
+---
+import { Image } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import PageHero from '../components/PageHero.astro';
+import Icon from '../components/Icon.astro';
+import CtaBand from '../components/CtaBand.astro';
+import logo from '../assets/photos/logo-official.jpg';
+import type { Lang } from '../content/types';
+import { leader, team, displayName } from '../content/team';
+import { pathFor } from '../i18n/routes';
+import { t, typo } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const d = t(lang);
+const a = d.about;
+const crumbs = [
+  { name: d.breadcrumbHome, path: pathFor('home', lang) },
+  { name: d.nav.about, path: pathFor('about', lang) },
+];
+const nameNote = a.nameNote;
+const everyone = [leader, ...team];
+---
+
+<Base lang={lang} pageId="about" title={a.metaTitle} description={a.metaDescription} crumbs={crumbs}>
+  <PageHero crumbs={crumbs} crumbLabel={d.breadcrumbAria} eyebrow={a.eyebrow} title={a.h1} lead={typo(a.lead, lang)}>
+    <Fragment slot="aside">
+      <div class="hero-card">
+        <p class="hero-card__stat"><span class="hero-card__value">{a.experienceValue}</span><span class="hero-card__label">{a.experienceLabel}</span></p>
+        <ul class="hero-card__faces" role="list" aria-label={a.teamSectionTitle}>
+          {
+            everyone.map((m) => (
+              <li>
+                <Image src={m.image} alt={displayName(m)} width={72} height={72} densities={[2]} class="hero-card__face" loading="eager" />
+              </li>
+            ))
+          }
+        </ul>
+        <a class="arrow-link" href="#team">{a.teamSectionTitle} <Icon name="arrowRight" size={18} /></a>
+      </div>
+    </Fragment>
+  </PageHero>
+
+  <!-- Leader -->
+  <section class="section leader" aria-labelledby="leader-name">
+    <div class="container leader__grid">
+      <div class="leader__media">
+        <div class="leader__frame">
+          <Image
+            src={leader.image}
+            alt={a.headshotAlt(leader.name)}
+            widths={[360, 540, 720, 900]}
+            sizes="(max-width: 899px) 86vw, 480px"
+            loading="eager"
+          />
+        </div>
+        <p class="leader__since"><Icon name="calendar" size={18} /> {a.leaderSince}</p>
+      </div>
+      <div class="leader__text">
+        <p class="eyebrow">{a.leaderEyebrow}</p>
+        <h2 id="leader-name" class="leader__name">
+          {leader.name}<span class="leader__degrees">, {leader.degrees}</span>
+        </h2>
+        <p class="leader__role">{leader.role[lang]}</p>
+        <h3 class="leader__subhead">{a.leaderCredentialsTitle}</h3>
+        <ul class="credentials" role="list">
+          {
+            leader.credentials[lang].map((c) => (
+              <li>
+                <Icon name="graduation" size={18} />
+                <span>{c}</span>
+              </li>
+            ))
+          }
+        </ul>
+        <h3 class="leader__subhead">{a.storyTitle}</h3>
+        {a.story.map((p) => <p>{typo(p, lang)}</p>)}
+        <p class="leader__note">{typo(nameNote, lang)}</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Team -->
+  <section class="section section--navy on-dark team-section" id="team" aria-labelledby="team-title">
+    <div class="container">
+      <div class="section-head">
+        <h2 id="team-title">{a.teamSectionTitle}</h2>
+        <p>{typo(a.teamSectionLead, lang)}</p>
+      </div>
+      <ul class="team-grid" role="list">
+        {
+          team.map((m) => (
+            <li class="member">
+              <div class="member__photo">
+                <Image src={m.image} alt={a.headshotAlt(displayName(m))} widths={[280, 420, 560]} sizes="(max-width: 599px) 90vw, (max-width: 1023px) 45vw, 280px" loading="lazy" />
+              </div>
+              <div class="member__body">
+                <h3 class="member__name">
+                  {displayName(m)}
+                  {m.degrees && <span class="member__degrees">{m.degrees}</span>}
+                </h3>
+                <p class="member__role">{m.role[lang]}</p>
+              </div>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="mission">
+    <div class="container mission">
+      <h2 id="mission" class="eyebrow">{a.missionTitle}</h2>
+      <p class="mission__text">{typo(a.mission, lang)}</p>
+    </div>
+  </section>
+
+  <section class="section section--alt" aria-labelledby="values">
+    <div class="container">
+      <h2 id="values">{a.valuesTitle}</h2>
+      <ul class="values" role="list">
+        {
+          a.values.map((v) => (
+            <li>
+              <h3>{v.title}</h3>
+              <p>{v.text}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <section class="section section--cool" aria-labelledby="role">
+    <div class="container">
+      <h2 id="role">{a.roleTitle}</h2>
+      <div class="role">
+        <div class="role__col role__col--do">
+          <h3><span class="role__badge"><Icon name="check" size={18} /></span> {a.doLabel}</h3>
+          <ul class="role__list" role="list">
+            {a.roleDo.map((x) => <li><span class="role__mark"><Icon name="check" size={14} /></span><span>{x}</span></li>)}
+          </ul>
+        </div>
+        <div class="role__col role__col--dont">
+          <h3><span class="role__badge"><Icon name="x" size={18} /></span> {a.dontLabel}</h3>
+          <ul class="role__list" role="list">
+            {a.roleDont.map((x) => <li><span class="role__mark"><Icon name="x" size={14} /></span><span>{x}</span></li>)}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="first-contact">
+    <div class="container contact-note">
+      <div>
+        <h2 id="first-contact">{a.teamTitle}</h2>
+        <p>{typo(a.team, lang)}</p>
+        <a class="arrow-link" href={pathFor('contact', lang)}>{d.steps.title} <Icon name="arrowRight" size={18} /></a>
+      </div>
+      <div class="contact-note__logo">
+        <Image src={logo} alt={a.logoAlt} width={260} height={260} loading="lazy" />
+      </div>
+    </div>
+  </section>
+
+  <CtaBand lang={lang} title={d.service.ctaTitle} text={d.steps.lead} />
+</Base>
+
+<style>
+  /* ---------- Hero aside ---------- */
+  .hero-card {
+    justify-self: end;
+    width: min(100%, 22rem);
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-top: 4px solid var(--red);
+    border-radius: var(--radius-lg);
+    padding: 1.75rem;
+    box-shadow: var(--shadow);
+    display: grid;
+    gap: 1.25rem;
+  }
+  .hero-card__stat {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 0;
+  }
+  .hero-card__value {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 3.5rem;
+    line-height: 1;
+    color: var(--navy);
+    letter-spacing: -0.04em;
+  }
+  .hero-card__label {
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.35;
+  }
+  .hero-card__faces {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+  }
+  .hero-card__faces li + li {
+    margin-left: -12px;
+  }
+  .hero-card__faces :global(.hero-card__face) {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: 50% 20%;
+    border: 3px solid var(--white);
+    box-shadow: 0 2px 8px rgb(0 26 61 / 0.15);
+  }
+
+  /* ---------- Leader ---------- */
+  .leader__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: clamp(2rem, 1rem + 4vw, 5rem);
+    align-items: start;
+  }
+  .leader__media {
+    position: sticky;
+    top: calc(var(--header-h) + 1.5rem);
+  }
+  .leader__frame {
+    position: relative;
+    border-radius: 28px 28px 28px 110px;
+    overflow: hidden;
+    aspect-ratio: 4 / 5;
+    background: var(--sky);
+    box-shadow: var(--shadow-lg);
+  }
+  .leader__frame::after {
+    content: '';
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 6px;
+    background: var(--red);
+  }
+  .leader__frame :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 18%;
+  }
+  .leader__since {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 1.25rem 0 0;
+    padding: 0.55rem 1rem;
+    border-radius: 999px;
+    background: var(--sky);
+    color: var(--navy);
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+  .leader__since :global(.icon) {
+    color: var(--red);
+  }
+  .leader__name {
+    font-size: var(--step-3);
+    margin-bottom: 0.25rem;
+  }
+  .leader__degrees {
+    font-weight: 600;
+    color: var(--muted);
+    font-size: 0.6em;
+    letter-spacing: 0;
+  }
+  .leader__role {
+    font-size: var(--step-1);
+    font-weight: 600;
+    color: var(--red-700);
+    margin-bottom: 1.75rem;
+  }
+  .leader__subhead {
+    font-size: 1.05rem;
+    margin: 1.75rem 0 0.85rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .credentials {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.65rem;
+  }
+  .credentials li {
+    display: grid;
+    grid-template-columns: 36px 1fr;
+    gap: 0.75rem;
+    align-items: center;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .credentials :global(.icon) {
+    width: 36px;
+    height: 36px;
+    padding: 8px;
+    border-radius: 50%;
+    background: var(--sky);
+    color: var(--navy);
+  }
+  .leader__text > p:not([class]) {
+    font-size: 1.075rem;
+  }
+  .leader__note {
+    font-size: 0.925rem;
+    color: var(--muted);
+    margin-top: 1.5rem;
+  }
+
+  /* ---------- Team ---------- */
+  .team-grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.25rem;
+  }
+  .member {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 24px 50px -28px rgb(0 0 0 / 0.6);
+    transition: transform var(--dur) var(--ease);
+  }
+  .member:hover {
+    box-shadow: 0 30px 60px -24px rgb(0 0 0 / 0.75);
+  }
+  .member__photo {
+    aspect-ratio: 4 / 5;
+    background: var(--sky);
+    overflow: hidden;
+  }
+  .member__photo :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 15%;
+    transition: transform 600ms var(--ease);
+  }
+  .member:hover .member__photo :global(img) {
+    transform: scale(1.03);
+  }
+  .member__body {
+    padding: 1.15rem 1.25rem 1.35rem;
+    border-top: 4px solid var(--red);
+    flex: 1;
+  }
+  .member__name {
+    display: grid;
+    gap: 0.1rem;
+    font-size: 1.15rem;
+    color: var(--navy);
+    margin: 0 0 0.4rem;
+  }
+  .member__degrees {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .member__role {
+    margin: 0;
+    color: var(--ink);
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  /* ---------- Mission, values, role ---------- */
+  .mission {
+    max-width: calc(54rem + 2 * var(--gutter));
+  }
+  .mission__text {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(1.4rem, 1.1rem + 1.2vw, 2.1rem);
+    line-height: 1.35;
+    letter-spacing: -0.015em;
+    color: var(--navy);
+    margin: 0;
+  }
+  .values {
+    list-style: none;
+    margin: 2rem 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-top: 1px solid var(--border);
+  }
+  .values li {
+    padding: 1.5rem 1.5rem 1.5rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .values h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .values h3::before {
+    content: '';
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    border: 2px solid var(--red);
+    flex: none;
+  }
+  .values p {
+    margin: 0;
+    color: var(--muted);
+  }
+  .role {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin-top: 1.5rem;
+  }
+  .role__col {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+  }
+  /* Green check for what we do, red cross for what we don't. */
+  .role__col--do {
+    --mark: var(--success);
+    --mark-bg: var(--success-bg);
+    border-top: 4px solid var(--success);
+  }
+  .role__col--dont {
+    --mark: var(--red);
+    --mark-bg: #fdeeee;
+    border-top: 4px solid var(--red);
+  }
+  .role__col h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .role__badge {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--mark);
+    color: var(--white);
+    flex: none;
+  }
+  .role__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.8rem;
+  }
+  .role__list li {
+    display: grid;
+    grid-template-columns: 24px 1fr;
+    gap: 0.7rem;
+    align-items: start;
+  }
+  .role__mark {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    margin-top: 0.05rem;
+    border-radius: 50%;
+    background: var(--mark-bg);
+    color: var(--mark);
+    box-shadow: inset 0 0 0 1.5px var(--mark);
+  }
+  .role__mark :global(.icon),
+  .role__badge :global(.icon) {
+    stroke-width: 3;
+  }
+  .contact-note {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) auto;
+    gap: 3rem;
+    align-items: center;
+  }
+  .contact-note p {
+    max-width: 40rem;
+  }
+  .contact-note__logo {
+    width: 220px;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  @media (max-width: 1023px) {
+    .team-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 899px) {
+    .leader__grid,
+    .role,
+    .contact-note {
+      grid-template-columns: 1fr;
+    }
+    .leader__media {
+      position: static;
+      max-width: 440px;
+    }
+    .hero-card {
+      justify-self: start;
+    }
+    .values {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  @media (max-width: 599px) {
+    .values {
+      grid-template-columns: 1fr;
+    }
+    .team-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+    .member__body {
+      padding: 0.85rem 0.9rem 1rem;
+    }
+    .member__name {
+      font-size: 1rem;
+    }
+    .member__role {
+      font-size: 0.9rem;
+    }
+  }
+</style>

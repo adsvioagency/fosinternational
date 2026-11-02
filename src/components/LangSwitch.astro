@@ -1,0 +1,197 @@
+---
+// Language switch: links to the same page in every language, each label written in its own language.
+// Choosing a language stores it in the `nf_lang` cookie, which Netlify's root redirect honours
+// (public/_redirects), so the next visit to "/" opens the chosen version.
+import Icon from './Icon.astro';
+import { langs, type Lang } from '../content/types';
+import { pathFor, type PageId } from '../i18n/routes';
+import { langNames, t } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+  pageId: PageId;
+  variant?: 'bar' | 'menu' | 'footer';
+}
+const { lang, pageId, variant = 'bar' } = Astro.props;
+const d = t(lang);
+---
+
+<nav class:list={['langs', `langs--${variant}`]} aria-label={d.langSwitch} translate="no">
+  {variant !== 'footer' && <Icon name="globe" size={variant === 'menu' ? 20 : 16} class="langs__icon" />}
+  <ul class="langs__list" role="list">
+    {
+      langs.map((l) => (
+        <li>
+          <a
+            class="langs__link"
+            href={pathFor(pageId, l)}
+            hreflang={l}
+            lang={l}
+            aria-current={l === lang ? 'true' : undefined}
+            data-lang-choice={l}
+          >
+            <span class="langs__short" aria-hidden="true">{langNames[l].short}</span>
+            <span class="langs__name">{langNames[l].name}</span>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</nav>
+
+<style>
+  .langs {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .langs__list {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .langs__link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  /* Top bar: a segmented pill on the dark utility strip. */
+  .langs--bar .langs__list {
+    padding: 3px;
+    gap: 2px;
+    border-radius: 999px;
+    border: 1px solid rgb(255 255 255 / 0.35);
+    background: rgb(255 255 255 / 0.06);
+  }
+  .langs--bar .langs__link {
+    min-height: 32px;
+    min-width: 40px;
+    padding: 0 0.75rem;
+    border-radius: 999px;
+    color: var(--white);
+    font-size: 0.85rem;
+    letter-spacing: 0.02em;
+  }
+  .langs--bar .langs__link:hover {
+    background: rgb(255 255 255 / 0.14);
+  }
+  .langs--bar .langs__link[aria-current='true'] {
+    background: var(--white);
+    color: var(--navy);
+  }
+  .langs--bar .langs__link:focus-visible {
+    outline: 2px solid var(--focus-on-dark);
+    outline-offset: 2px;
+  }
+  .langs--bar :global(.langs__icon) {
+    color: #c9d6e6;
+  }
+  /* Small phones: give the scrolling strip a little more room. */
+  @media (max-width: 479px) {
+    .langs--bar :global(.langs__icon) {
+      display: none;
+    }
+    .langs--bar .langs__link {
+      min-width: 36px;
+      padding: 0 0.55rem;
+    }
+  }
+  /* Narrow screens show "FR · EN · ES"; the full name stays available to screen readers. */
+  .langs--bar .langs__name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  @media (min-width: 900px) {
+    .langs--bar .langs__short {
+      display: none;
+    }
+    .langs--bar .langs__name {
+      position: static;
+      width: auto;
+      height: auto;
+      overflow: visible;
+      clip: auto;
+    }
+  }
+
+  /* Mobile menu: three large buttons. */
+  .langs--menu {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.75rem;
+    padding: 0.85rem 0 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .langs--menu :global(.langs__icon) {
+    color: var(--red);
+  }
+  .langs--menu .langs__list {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    width: 100%;
+  }
+  .langs--menu .langs__link {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    gap: 0.05rem;
+    min-height: 52px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border-strong);
+    color: var(--navy);
+    font-size: 0.9rem;
+    line-height: 1.15;
+  }
+  .langs--menu .langs__short {
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+  .langs--menu .langs__link[aria-current='true'] {
+    background: var(--navy);
+    border-color: var(--navy);
+    color: var(--white);
+  }
+  .langs--menu .langs__link[aria-current='true'] .langs__short {
+    color: #c9d6e6;
+  }
+
+  /* Footer: plain links. */
+  .langs--footer .langs__list {
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+  }
+  .langs--footer .langs__short {
+    display: none;
+  }
+  .langs--footer .langs__link {
+    min-height: 44px;
+    color: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .langs--footer .langs__link[aria-current='true'] {
+    text-decoration: none;
+    opacity: 0.75;
+  }
+</style>
+
+<script>
+  // Remember an explicit choice: Netlify reads nf_lang on "/", and the suggestion bar stops asking.
+  document.addEventListener('click', (e) => {
+    const link = (e.target as HTMLElement).closest<HTMLAnchorElement>('a[data-lang-choice]');
+    if (!link) return;
+    document.cookie = `nf_lang=${link.dataset.langChoice}; path=/; max-age=31536000; SameSite=Lax`;
+  });
+</script>

@@ -1,0 +1,159 @@
+---
+// Brand-coloured globe centred on the Americas, with the six main destinations highlighted and
+// flagged. Drawn once at build time with d3-geo from Natural Earth data (world-atlas, 1:110m),
+// so the page ships a small static SVG and no mapping library.
+import { getImage } from 'astro:assets';
+import { geoOrthographic, geoPath, geoGraticule10 } from 'd3-geo';
+import { feature } from 'topojson-client';
+import type { Topology, GeometryCollection } from 'topojson-specification';
+import type { Feature, FeatureCollection } from 'geojson';
+import worldJson from 'world-atlas/countries-110m.json';
+import landJson from 'world-atlas/land-110m.json';
+import { flags, countryOrder, type Country } from '../lib/flags';
+import type { Lang } from '../content/types';
+import { t } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+  class?: string;
+}
+const { lang, class: className } = Astro.props;
+const d = t(lang);
+
+const W = 360;
+const H = 330;
+const cx = 180;
+const cy = 165;
+const R = 112;
+const projection = geoOrthographic()
+  .rotate([82, -22])
+  .scale(R)
+  .translate([cx, cy])
+  .clipAngle(90);
+const path = geoPath(projection).digits(1);
+
+const world = worldJson as unknown as Topology<{ countries: GeometryCollection }>;
+const land = landJson as unknown as Topology<{ land: GeometryCollection }>;
+const landPath = path(feature(land, land.objects.land) as FeatureCollection) ?? '';
+const countries = feature(world, world.objects.countries) as FeatureCollection;
+
+// ISO 3166-1 numeric codes used by Natural Earth.
+const iso: Record<Country, string> = { us: '840', ca: '124', mx: '484', co: '170', jm: '388', do: '214' };
+// Pin positions (lon, lat): a point inside each country, chosen so the pins read clearly at this size.
+const pins: Record<Country, [number, number]> = {
+  us: [-98, 39],
+  ca: [-106, 57],
+  mx: [-102, 23.5],
+  co: [-73.5, 4.5],
+  jm: [-77.3, 18.1],
+  do: [-70.4, 18.9],
+};
+// Callout angle (degrees, 0 = right, 90 = down) for each flag, spread around the globe.
+const callout: Record<Country, number> = { ca: -118, us: -158, mx: 168, jm: 118, co: 72, do: 16 };
+const ring = R + 36;
+const FW = 34;
+const FH = 26;
+
+const marks = await Promise.all(
+  countryOrder.map(async (c) => {
+    const shape = countries.features.find((f: Feature) => String(f.id) === iso[c]);
+    const [px, py] = projection(pins[c]) ?? [cx, cy];
+    const a = (callout[c] * Math.PI) / 180;
+    const fx = cx + ring * Math.cos(a);
+    const fy = cy + ring * Math.sin(a);
+    const img = await getImage({ src: flags[c], width: FW * 2, height: FH * 2, format: 'webp' });
+    return { c, d: shape ? (path(shape) ?? '') : '', px, py, fx, fy, href: img.src, name: d.countries[c] };
+  })
+);
+const sphere = path({ type: 'Sphere' }) ?? '';
+const graticule = path(geoGraticule10()) ?? '';
+const uid = `globe-${lang}`;
+---
+
+<svg class:list={['globe', className]} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={d.finder.globeLabel} data-globe>
+  <defs>
+    <radialGradient id={`${uid}-sea`} cx="38%" cy="32%" r="75%">
+      <stop offset="0%" stop-color="#1b4f8f" />
+      <stop offset="55%" stop-color="#00295f" />
+      <stop offset="100%" stop-color="#001a3d" />
+    </radialGradient>
+    <radialGradient id={`${uid}-shine`} cx="32%" cy="26%" r="45%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.22" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+    </radialGradient>
+    <clipPath id={`${uid}-flag`}>
+      <rect x={-FW / 2} y={-FH / 2} width={FW} height={FH} rx="4" />
+    </clipPath>
+  </defs>
+
+  <circle cx={cx} cy={cy} r={R + 14} fill="none" stroke="currentColor" stroke-opacity="0.18" stroke-dasharray="2 7" stroke-linecap="round" />
+  <path d={sphere} fill={`url(#${uid}-sea)`} />
+  <path d={graticule} fill="none" stroke="#ffffff" stroke-opacity="0.1" stroke-width="0.6" />
+  <path d={landPath} fill="#2f5f9a" stroke="#00295f" stroke-width="0.5" />
+  {marks.map((m) => m.d && <path d={m.d} fill="#eef4fa" stroke="#00295f" stroke-width="0.6" />)}
+  <path d={sphere} fill={`url(#${uid}-shine)`} />
+
+  {
+    marks.map((m, i) => (
+      <g class="globe__mark" style={`--i: ${i}`}>
+        <title>{m.name}</title>
+        <line x1={m.px} y1={m.py} x2={m.fx} y2={m.fy} stroke="#c11418" stroke-width="1.25" stroke-dasharray="3 3" />
+        <circle class="globe__pulse" cx={m.px} cy={m.py} r="4" fill="#c11418" />
+        <circle cx={m.px} cy={m.py} r="3.6" fill="#c11418" stroke="#ffffff" stroke-width="1.5" />
+        <g transform={`translate(${m.fx.toFixed(1)} ${m.fy.toFixed(1)})`}>
+          <rect x={-FW / 2 - 2.5} y={-FH / 2 - 2.5} width={FW + 5} height={FH + 5} rx="6" fill="#ffffff" class="globe__flag-bg" />
+          <image href={m.href} x={-FW / 2} y={-FH / 2} width={FW} height={FH} preserveAspectRatio="xMidYMid slice" clip-path={`url(#${uid}-flag)`} />
+        </g>
+      </g>
+    ))
+  }
+</svg>
+
+<style>
+  .globe {
+    display: block;
+    width: 100%;
+    height: auto;
+    color: var(--navy);
+    overflow: visible;
+  }
+  .globe__flag-bg {
+    filter: drop-shadow(0 3px 6px rgb(0 26 61 / 0.25));
+  }
+  .globe__pulse {
+    transform-box: fill-box;
+    transform-origin: center;
+    opacity: 0;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .globe.is-live .globe__pulse {
+      animation: globe-pulse 2.8s var(--ease) 4;
+      animation-delay: calc(var(--i) * 0.45s);
+    }
+    @keyframes globe-pulse {
+      0% {
+        opacity: 0.55;
+        transform: scale(1);
+      }
+      70%,
+      100% {
+        opacity: 0;
+        transform: scale(3.2);
+      }
+    }
+  }
+</style>
+
+<script>
+  const globes = document.querySelectorAll<SVGElement>('[data-globe]');
+  if ('IntersectionObserver' in window && globes.length) {
+    const io = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        entry.target.classList.add('is-live');
+        io.unobserve(entry.target);
+      }
+    });
+    globes.forEach((g) => io.observe(g));
+  }
+</script>

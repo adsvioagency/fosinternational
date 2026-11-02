@@ -1,0 +1,373 @@
+---
+// Filter services by destination and need. Without JavaScript every service stays listed.
+import Icon from './Icon.astro';
+import ServiceCard from './ServiceCard.astro';
+import type { Destination, Lang, Need } from '../content/types';
+import { services } from '../content/services/index';
+import { contactPath, pathFor } from '../i18n/routes';
+import { t, typo } from '../i18n/ui';
+import { NOT_SURE_ID, OTHER_COUNTRY_ID } from '../lib/whatsapp';
+
+interface Props {
+  lang: Lang;
+  id: string;
+  /** Show the "see all services" link under the results (homepage). */
+  linkToHub?: boolean;
+  cardHeading?: 'h2' | 'h3';
+  /** 'compact' renders link rows (homepage); 'cards' renders full service cards (hub). */
+  variant?: 'cards' | 'compact';
+}
+const { lang, id, linkToHub = false, cardHeading = 'h3', variant = 'cards' } = Astro.props;
+const d = t(lang);
+const destinations: Destination[] = ['us', 'ca', 'do', 'co', 'mx', 'jm'];
+const needs: Need[] = ['travel', 'family', 'study', 'documents', 'interpreting', 'settle'];
+---
+
+<div class="finder" data-finder id={id}>
+  <div class="finder__controls" data-finder-controls>
+    <fieldset class="finder__group">
+      <legend>{d.finder.destination}</legend>
+      <div class="chips">
+        <button type="button" class="chip" aria-pressed="true" data-filter="dest" data-value="">{d.finder.all}</button>
+        {
+          destinations.map((x) => (
+            <button type="button" class="chip" aria-pressed="false" data-filter="dest" data-value={x}>
+              {d.finder.destinations[x]}
+            </button>
+          ))
+        }
+        <button type="button" class="chip chip--unsure" aria-pressed="false" data-filter="dest" data-value="other">
+          <Icon name="globe" size={16} />
+          {d.finder.other}
+        </button>
+      </div>
+    </fieldset>
+    <fieldset class="finder__group">
+      <legend>{d.finder.need}</legend>
+      <div class="chips">
+        <button type="button" class="chip" aria-pressed="true" data-filter="need" data-value="">{d.finder.allNeeds}</button>
+        {
+          needs.map((x) => (
+            <button type="button" class="chip" aria-pressed="false" data-filter="need" data-value={x}>
+              {d.finder.needs[x]}
+            </button>
+          ))
+        }
+        <button type="button" class="chip chip--unsure" aria-pressed="false" data-filter="need" data-value="unsure">
+          <Icon name="help" size={16} />
+          {d.finder.notSure}
+        </button>
+      </div>
+    </fieldset>
+    <div class="finder__status">
+      <p class="finder__count" role="status" aria-live="polite" data-finder-count data-tpl-one={d.finder.count(1)} data-tpl-many={d.finder.count(999)}></p>
+      <button type="button" class="finder__reset" data-finder-reset hidden>
+        <Icon name="x" size={16} />
+        {d.finder.reset}
+      </button>
+    </div>
+  </div>
+
+  <div class="finder__unsure" data-finder-unsure hidden>
+    <div>
+      <p class="finder__unsure-title">{d.finder.notSureTitle}</p>
+      <p>{d.finder.notSureText}</p>
+    </div>
+    <a class="btn btn--primary" href={contactPath(lang, NOT_SURE_ID)} data-inquiry>{d.cta.consult}</a>
+  </div>
+
+  <div class="finder__unsure" data-finder-other hidden>
+    <div>
+      <p class="finder__unsure-title">{d.finder.otherTitle}</p>
+      <p>{d.finder.otherText}</p>
+    </div>
+    <a class="btn btn--primary" href={contactPath(lang, OTHER_COUNTRY_ID)} data-inquiry>{d.cta.consult}</a>
+  </div>
+
+  <p class="finder__none" data-finder-none hidden>
+    {d.finder.none} <a href={pathFor('services', lang)}>{d.nav.allServices}</a>
+  </p>
+
+  <ul class:list={['finder__grid', `finder__grid--${variant}`]} role="list">
+    {
+      services.map((s) => (
+        <li data-finder-item data-destinations={s.destinations.join(' ')} data-needs={s.needs.join(' ')}>
+          {variant === 'cards' ? (
+            <ServiceCard service={s} lang={lang} headingLevel={cardHeading} />
+          ) : (
+            <a class="finder__row" href={pathFor(`service:${s.id}`, lang)}>
+              <span class="finder__row-icon">
+                <Icon name={s.icon} size={20} />
+              </span>
+              <span class="finder__row-text">
+                <span class="finder__row-label">{typo(s[lang].label, lang)}</span>
+                <span class="finder__row-dest">{s.destinations.map((x) => d.finder.destinations[x]).join(' · ')}</span>
+              </span>
+              <Icon name="arrowRight" size={18} class="finder__row-arrow" />
+            </a>
+          )}
+        </li>
+      ))
+    }
+  </ul>
+
+  {
+    linkToHub && (
+      <p class="finder__hub">
+        <a class="arrow-link" href={pathFor('services', lang)}>
+          {d.nav.allServices} <Icon name="arrowRight" size={18} />
+        </a>
+      </p>
+    )
+  }
+</div>
+
+<style>
+  .finder__controls {
+    display: grid;
+    gap: 1.25rem;
+    margin-bottom: 1.75rem;
+  }
+  :global(.no-js) .finder__controls {
+    display: none;
+  }
+  .finder__group {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+  }
+  .finder__group legend {
+    font-family: var(--font-display);
+    font-weight: 800;
+    color: var(--navy);
+    font-size: 0.95rem;
+    padding: 0;
+    margin-bottom: 0.6rem;
+  }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 44px;
+    padding: 0.45rem 1rem;
+    border-radius: 999px;
+    border: 1.5px solid var(--border-strong);
+    background: var(--white);
+    color: var(--ink);
+    font: inherit;
+    font-weight: 600;
+    font-size: 0.975rem;
+    cursor: pointer;
+    transition:
+      background-color var(--dur) var(--ease),
+      border-color var(--dur) var(--ease),
+      color var(--dur) var(--ease);
+  }
+  .chip:hover {
+    border-color: var(--navy);
+  }
+  .chip[aria-pressed='true'] {
+    background: var(--navy);
+    border-color: var(--navy);
+    color: var(--white);
+  }
+  .chip--unsure {
+    border-style: dashed;
+  }
+  .chip--unsure[aria-pressed='true'] {
+    background: var(--red);
+    border-color: var(--red);
+    border-style: solid;
+  }
+  .finder__status {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-height: 44px;
+  }
+  .finder__count {
+    margin: 0;
+    font-weight: 600;
+    color: var(--muted);
+  }
+  .finder__reset {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 44px;
+    padding: 0 0.75rem;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--navy);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+  .finder__reset[hidden] {
+    display: none;
+  }
+  .finder__reset:hover {
+    background: var(--sky);
+  }
+  .finder__unsure {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem 2rem;
+    background: var(--white);
+    border: 1.5px dashed var(--red);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .finder__unsure[hidden],
+  .finder__none[hidden] {
+    display: none;
+  }
+  .finder__unsure p {
+    margin: 0;
+  }
+  .finder__unsure-title {
+    font-family: var(--font-display);
+    font-weight: 800;
+    color: var(--navy);
+    font-size: 1.15rem;
+    margin-bottom: 0.25rem !important;
+  }
+  .finder__none {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--border);
+  }
+  .finder__grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 17.5rem), 1fr));
+    gap: 1rem;
+  }
+  .finder__grid--compact {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+    gap: 0.6rem;
+  }
+  .finder__row {
+    display: grid;
+    grid-template-columns: 40px 1fr 18px;
+    gap: 0.85rem;
+    align-items: center;
+    min-height: 64px;
+    padding: 0.7rem 1rem;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--ink);
+    text-decoration: none;
+    transition:
+      border-color var(--dur) var(--ease),
+      box-shadow var(--dur) var(--ease);
+  }
+  .finder__row:hover {
+    border-color: var(--navy);
+    box-shadow: var(--shadow-sm);
+  }
+  .finder__row-icon {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--sky);
+    color: var(--navy);
+  }
+  .finder__row-text {
+    display: grid;
+    line-height: 1.3;
+  }
+  .finder__row-label {
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: var(--navy);
+  }
+  .finder__row-dest {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .finder__row :global(.finder__row-arrow) {
+    color: var(--red);
+    transition: transform var(--dur) var(--ease);
+  }
+  .finder__row:hover :global(.finder__row-arrow) {
+    transform: translateX(3px);
+  }
+  .finder__grid > li[hidden] {
+    display: none;
+  }
+  .finder__hub {
+    margin: 1.75rem 0 0;
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-finder]').forEach((root) => {
+    const chips = root.querySelectorAll<HTMLButtonElement>('[data-filter]');
+    const items = root.querySelectorAll<HTMLElement>('[data-finder-item]');
+    const count = root.querySelector<HTMLElement>('[data-finder-count]')!;
+    const reset = root.querySelector<HTMLButtonElement>('[data-finder-reset]')!;
+    const unsure = root.querySelector<HTMLElement>('[data-finder-unsure]')!;
+    const other = root.querySelector<HTMLElement>('[data-finder-other]')!;
+    const none = root.querySelector<HTMLElement>('[data-finder-none]')!;
+    const state = { dest: '', need: '' };
+
+    const render = () => {
+      chips.forEach((c) => c.setAttribute('aria-pressed', String(state[c.dataset.filter as 'dest' | 'need'] === c.dataset.value)));
+      const isUnsure = state.need === 'unsure';
+      let shown = 0;
+      items.forEach((item) => {
+        const dests = (item.dataset.destinations ?? '').split(' ');
+        const needs = (item.dataset.needs ?? '').split(' ');
+        const destOk = !state.dest || dests.includes(state.dest) || dests.includes('any');
+        const needOk = !state.need || isUnsure || needs.includes(state.need);
+        const visible = destOk && needOk;
+        item.hidden = !visible;
+        if (visible) shown++;
+      });
+      // "Other country": tourist/study visas for unlisted destinations go through a direct request;
+      // document and interpreting services (usable for any destination) stay listed below.
+      const isOther = state.dest === 'other';
+      unsure.hidden = !isUnsure;
+      other.hidden = !isOther;
+      none.hidden = shown > 0 || isOther;
+      reset.hidden = !state.dest && !state.need;
+      const tpl = shown === 1 ? count.dataset.tplOne : count.dataset.tplMany?.replace('999', String(shown));
+      count.textContent = tpl ?? '';
+    };
+
+    chips.forEach((chip) =>
+      chip.addEventListener('click', () => {
+        const key = chip.dataset.filter as 'dest' | 'need';
+        const value = chip.dataset.value ?? '';
+        state[key] = state[key] === value ? '' : value;
+        render();
+      })
+    );
+    reset.addEventListener('click', () => {
+      state.dest = '';
+      state.need = '';
+      render();
+      chips[0]?.focus();
+    });
+    render();
+  });
+</script>
