@@ -345,10 +345,30 @@ await check('Browser language: Spanish visitor on a French page is offered the S
   assert.equal(await bar.isVisible(), false);
   assert.ok((await es.cookies()).some((c) => c.name === 'nf_lang' && c.value === 'fr'));
 });
-await check('Root opens the browser language (static fallback)', async () => {
+await check('Root answers 200 with the language gate and never redirects', async () => {
+  // A Spanish browser carrying a French cookie: either signal used to redirect the root away.
   await es.clearCookies();
-  await e.goto(base + '/');
-  await e.waitForURL(/\/es\/$/, { timeout: 5000 });
+  await es.addCookies([{ name: 'nf_lang', value: 'fr', url: base }]);
+  const res = await e.goto(base + '/');
+  assert.equal(res.status(), 200);
+  await e.waitForTimeout(400);
+  assert.equal(new URL(e.url()).pathname, '/', 'the root redirected');
+  assert.match(await e.locator('h1').innerText(), /Fernando OMG Services/);
+  assert.ok((await e.locator('link[rel="canonical"]').getAttribute('href')).endsWith('/'), 'canonical is not the root');
+  for (const l of ['fr', 'en', 'es']) {
+    assert.equal(await e.locator(`.gate__langs a[href="/${l}/"]`).count(), 1, `no link to /${l}/`);
+  }
+  // The visitor's own language is marked as a hint only.
+  assert.equal(await e.locator('.gate__langs li.is-suggested a[hreflang="fr"]').count(), 1);
+});
+
+await check('Root language links reach each version', async () => {
+  for (const l of ['fr', 'en', 'es']) {
+    await e.goto(base + '/');
+    await e.click(`.gate__langs a[href="/${l}/"]`);
+    await e.waitForURL(new RegExp(`/${l}/$`), { timeout: 5000 });
+    assert.equal(await e.locator('html').getAttribute('lang'), l);
+  }
 });
 
 await browser.close();

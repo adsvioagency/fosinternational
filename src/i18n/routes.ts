@@ -1,6 +1,6 @@
 // Locale-neutral page IDs and their localized paths.
 // Language switching, hreflang, canonicals, breadcrumbs and the sitemap all resolve through here.
-import { langs, type Lang } from '../content/types';
+import { langs, defaultLang, type Lang } from '../content/types';
 import { services } from '../content/services/index';
 import { resources } from '../content/resources';
 
@@ -50,16 +50,29 @@ export const allPageIds = (): PageId[] => [
   ...resources.map((r) => `resource:${r.id}` as PageId),
 ];
 
+/** The language-neutral landing page. It belongs to no language, so it is the homepage cluster's x-default. */
+export const rootPath = '/';
+
 /** The same page in every language, e.g. { fr: '/fr/a-propos/', en: '/en/about/', es: '/es/sobre-nosotros/' }. */
 export const alternatesFor = (pageId: PageId) =>
   Object.fromEntries(langs.map((l) => [l, pathFor(pageId, l)])) as Record<Lang, string>;
 
-/** Map of every localized path → its alternates, used by the sitemap. */
-export function alternatesByPath(): Map<string, Record<Lang, string>> {
-  const map = new Map<string, Record<Lang, string>>();
+/**
+ * Where hreflang="x-default" points. The homepage cluster sends it to the neutral root, which lets
+ * visitors choose; every other page falls back to French, the primary editorial version.
+ */
+export const xDefaultFor = (pageId: PageId) => (pageId === 'home' ? rootPath : pathFor(pageId, defaultLang));
+
+export type Alternates = Record<Lang, string> & { xDefault: string };
+
+/** Map of every indexable path → its alternates, used by the sitemap. Includes the root. */
+export function alternatesByPath(): Map<string, Alternates> {
+  const map = new Map<string, Alternates>();
   for (const id of allPageIds()) {
-    const alt = alternatesFor(id);
+    const alt: Alternates = { ...alternatesFor(id), xDefault: xDefaultFor(id) };
     for (const l of langs) map.set(alt[l], alt);
+    // The root shares the homepage's alternates, so all four URLs declare the same set.
+    if (id === 'home') map.set(rootPath, alt);
   }
   return map;
 }

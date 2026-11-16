@@ -37,6 +37,9 @@ for (const f of pages) {
   if (!urlPath.startsWith(`/${lang}/`)) warn(`${urlPath}: lang="${lang}" does not match path`);
   if (canonical !== origin + urlPath) warn(`${urlPath}: canonical ${canonical} is not self-referencing`);
   for (const k of [...LANGS, 'x-default']) if (!alts[k]) warn(`${urlPath}: missing hreflang ${k}`);
+  // The homepage cluster points x-default at the neutral root; every other cluster at French.
+  const wantXDefault = /^\/(fr|en|es)\/$/.test(urlPath) ? origin + '/' : alts.fr;
+  if (alts['x-default'] !== wantXDefault) warn(`${urlPath}: x-default is ${alts['x-default']}, expected ${wantXDefault}`);
   if (!html.includes('<meta name="google" content="notranslate"')) warn(`${urlPath}: missing notranslate meta`);
   if (alts[lang] !== canonical) warn(`${urlPath}: hreflang self-reference mismatch`);
   const h1s = html.match(/<h1[\s>]/g)?.length ?? 0;
@@ -82,8 +85,86 @@ for (const [p, info] of pageInfo) {
   }
 }
 
+// The root: one indexable, language-neutral page, the x-default of the homepage cluster.
+const rootFile = path.join(dist, 'index.html');
+let rootHtml = '';
+if (!existsSync(rootFile)) {
+  warn('No index.html at the site root');
+} else {
+  rootHtml = readFileSync(rootFile, 'utf8');
+  const alts = Object.fromEntries([...rootHtml.matchAll(/<link rel="alternate" hreflang="([^"]+)" href="([^"]+)"/g)].map((m) => [m[1], m[2]]));
+  if (get(rootHtml, /<link rel="canonical" href="([^"]+)"/) !== origin + '/') warn('/: canonical is not the bare domain');
+  for (const l of LANGS) if (alts[l] !== origin + `/${l}/`) warn(`/: hreflang ${l} is ${alts[l]}`);
+  if (alts['x-default'] !== origin + '/') warn('/: x-default does not point at the root');
+  if (!/<title>[^<]{10,}<\/title>/.test(rootHtml)) warn('/: weak <title>');
+  if (!/<meta name="description" content="[^"]{50,}"/.test(rootHtml)) warn('/: weak meta description');
+  if ((rootHtml.match(/<h1[\s>]/g)?.length ?? 0) !== 1) warn('/: expected exactly one <h1>');
+  if (!rootHtml.includes('<meta property="og:site_name"')) warn('/: missing og:site_name');
+  if (!/<link rel="icon"[^>]+href="\/favicon\.png"/.test(rootHtml)) warn('/: does not declare /favicon.png');
+  // Direct, crawlable links to each language version, and no redirect of any kind.
+  for (const l of LANGS) if (!new RegExp(`href="/${l}/"`).test(rootHtml)) warn(`/: no direct link to /${l}/`);
+  if (/http-equiv="refresh"/i.test(rootHtml)) warn('/: still contains a meta refresh');
+  if (/location\.replace|location\.href\s*=/.test(rootHtml)) warn('/: still redirects in script');
+  try {
+    const graph = JSON.parse(rootHtml.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1])['@graph'];
+    const site = graph.find((n) => n['@type'] === 'WebSite');
+    if (!site) warn('/: no WebSite structured data');
+    else {
+      if (site.name !== 'Fernando OMG Services') warn(`/: WebSite name is ${site.name}`);
+      if (site.alternateName !== 'FOS') warn(`/: WebSite alternateName is ${site.alternateName}`);
+      if (site.url !== origin + '/') warn(`/: WebSite url is ${site.url}`);
+    }
+  } catch (e) {
+    warn(`/: JSON-LD does not parse (${e.message})`);
+  }
+  for (const m of rootHtml.matchAll(/(?:href|src)="(\/[^"#?]*)[^"]*"/g)) {
+    const candidates = [path.join(dist, m[1]), path.join(dist, m[1], 'index.html')];
+    if (!candidates.some((c) => existsSync(c) && statSync(c).isFile())) warn(`/: broken internal link ${m[1]}`);
+  }
+}
+
+// Assets referenced from the bundled CSS (fonts above all) must exist. A stylesheet pulled in with
+// an @import inside a component's <style> block gets its url() paths rewritten differently, which
+// once left the root page asking for /_astro/files/*.woff2 and falling back to a system font.
+for (const f of files.filter((x) => x.endsWith('.css'))) {
+  const css = readFileSync(f, 'utf8');
+  for (const m of css.matchAll(/url\(\s*["']?(\/[^"')]+)["']?\s*\)/g)) {
+    if (!existsSync(path.join(dist, m[1]))) warn(`${rel(f)}: missing asset ${m[1]}`);
+  }
+}
+
+// The favicon Google reads must be square and at least 96px (it asks for a multiple of 48).
+{
+  const ico = path.join(dist, 'favicon.png');
+  if (!existsSync(ico)) warn('favicon.png missing from the build');
+  else {
+    // PNG IHDR: width and height are big-endian 32-bit integers at byte 16 and byte 20.
+    const buf = readFileSync(ico);
+    const w = buf.readUInt32BE(16);
+    const h = buf.readUInt32BE(20);
+    if (w !== h || w % 48 !== 0 || w < 96) warn(`favicon.png is ${w}x${h}; expected a square multiple of 48, at least 96`);
+    else console.log(`Favicon: /favicon.png verified at ${w}x${h}.`);
+  }
+}
+
+// The sitemap must reach every built page and the root, through the index.
+{
+  const idx = path.join(dist, 'sitemap-index.xml');
+  const child = path.join(dist, 'sitemap-0.xml');
+  if (!existsSync(idx) || !existsSync(child)) warn('sitemap-index.xml or sitemap-0.xml missing');
+  else {
+    if (!readFileSync(idx, 'utf8').includes(origin + '/sitemap-0.xml')) warn('sitemap index does not list sitemap-0.xml');
+    const locs = [...readFileSync(child, 'utf8').matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+    if (!locs.includes(origin + '/')) warn('sitemap does not list the root');
+    for (const [urlPath] of pageInfo) if (!locs.includes(origin + urlPath)) warn(`sitemap is missing ${urlPath}`);
+    if (locs.length !== pageInfo.size + 1) warn(`sitemap lists ${locs.length} URLs for ${pageInfo.size} pages plus the root`);
+    if (locs.some((u) => /\/404\//.test(u))) warn('sitemap lists the 404 page');
+    console.log(`Sitemap: ${locs.length} URLs (${pageInfo.size} language pages + the root).`);
+  }
+}
+
 // Content rules from the brief.
-const allText = pages.map((f) => readFileSync(f, 'utf8')).join('\n');
+const allText = [...pages.map((f) => readFileSync(f, 'utf8')), rootHtml].join('\n');
 const forbidden = [
   [/Kentucky|Bonao/i, 'obsolete office location'],
   [/564-4156|8495644156/, 'historical Canada-only number'],
@@ -127,6 +208,9 @@ const noindexCount = pages.filter((f) => readFileSync(f, 'utf8').includes('name=
 console.log(`Build mode: ${draft ? 'draft (noindex)' : 'launch (indexable)'}; origin ${origin}`);
 if (draft && noindexCount !== pages.length) warn(`Draft build but only ${noindexCount}/${pages.length} pages are noindex`);
 if (!draft && noindexCount > 0) warn(`Launch build still has ${noindexCount} noindex pages`);
+const rootNoindex = rootHtml.includes('name="robots" content="noindex');
+if (draft && !rootNoindex) warn('Draft build but the root is not noindex');
+if (!draft && rootNoindex) warn('Launch build but the root is noindex');
 
 // Rough content length per service/resource page (main column text).
 const lengths = [];

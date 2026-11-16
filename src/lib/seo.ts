@@ -64,6 +64,7 @@ export function websiteNode() {
     '@id': websiteId(),
     url: abs('/'),
     name: business.name,
+    alternateName: business.acronym,
     inLanguage: [...langs],
     publisher: { '@id': orgId() },
   };

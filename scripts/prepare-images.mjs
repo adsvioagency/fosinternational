@@ -166,10 +166,13 @@ for (const job of jobs) {
   console.log('wrote og-default.jpg');
 }
 
-// Favicon / touch icon from the emblem crop.
+// Favicon / touch icon from the emblem crop. 96px (a multiple of 48) is what Google asks for:
+// at 48 the mark was too coarse for a search result, so it fell back to a generic globe.
 {
-  const emblem = await sharp(src('official logo .jpg')).extract({ left: 245, top: 105, width: 570, height: 570 }).toBuffer();
+  // Same crop as logo-emblem: the F and aeroplane only. The old box reached 45px lower and
+  // clipped the top of the FERNANDO wordmark, which read as noise once scaled down.
+  const emblem = await sharp(src('official logo .jpg')).extract({ left: 245, top: 118, width: 570, height: 524 }).toBuffer();
   await sharp(emblem).resize(180, 180, { fit: 'contain', background: '#F9F8F6' }).png().toFile(path.join(PUBLIC, 'apple-touch-icon.png'));
-  await sharp(emblem).resize(48, 48, { fit: 'contain', background: '#F9F8F6' }).png().toFile(path.join(PUBLIC, 'favicon.png'));
+  await sharp(emblem).resize(96, 96, { fit: 'contain', background: '#F9F8F6' }).png().toFile(path.join(PUBLIC, 'favicon.png'));
   console.log('wrote icons');
 }

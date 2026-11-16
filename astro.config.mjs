@@ -22,8 +22,9 @@ export default defineConfig({
   build: { format: 'directory' },
   integrations: [
     sitemap({
-      filter: (page) => !/\/404\/?$/.test(page) && new URL(page).pathname !== '/',
+      filter: (page) => !/\/404\/?$/.test(page),
       // Localized slugs differ per language, so alternates come from the route table.
+      // The root is included: it is the homepage cluster’s x-default.
       serialize(item) {
         const url = new URL(item.url);
         const alt = alternatesByPath().get(url.pathname);
@@ -32,7 +33,7 @@ export default defineConfig({
             { lang: 'fr', url: url.origin + alt.fr },
             { lang: 'en', url: url.origin + alt.en },
             { lang: 'es', url: url.origin + alt.es },
-            { lang: 'x-default', url: url.origin + alt.fr },
+            { lang: 'x-default', url: url.origin + alt.xDefault },
           ];
         }
         return item;
