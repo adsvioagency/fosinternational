@@ -157,7 +157,7 @@ await check('English site builds the message in English', async () => {
 });
 
 await check('Service finder filters by destination and resets', async () => {
-  await page.goto(base + '/fr/');
+  await page.goto(base + '/');
   const finder = page.locator('#home-finder');
   const visible = () => finder.locator('[data-finder-item]:not([hidden])').count();
   assert.equal(await visible(), 17);
@@ -180,7 +180,7 @@ await check('Generic CTAs on a service page preselect that service', async () =>
 });
 
 await check('Video cards show a cover and load the TikTok player only on play', async () => {
-  await page.goto(base + '/fr/');
+  await page.goto(base + '/');
   const card = page.locator('.video').first();
   assert.ok(await card.locator('img.video__img').count(), 'cover image missing');
   assert.equal(await page.locator('iframe[src*="tiktok.com"]').count(), 0, 'player loaded before play');
@@ -190,7 +190,7 @@ await check('Video cards show a cover and load the TikTok player only on play', 
 });
 
 await check('Scroll reveal: below-the-fold content appears as it scrolls into view', async () => {
-  await page.goto(base + '/fr/');
+  await page.goto(base + '/');
   const target = page.locator('.office__facts > div').first();
   assert.equal(await target.getAttribute('data-reveal'), 'up');
   assert.equal(await target.evaluate((el) => el.classList.contains('is-visible')), false);
@@ -209,7 +209,7 @@ await check('Address links to Google Maps and the map is lazy-loaded', async () 
 });
 
 await check('Desktop services menu opens, closes with Escape', async () => {
-  await page.goto(base + '/fr/');
+  await page.goto(base + '/');
   const toggle = page.locator('[data-services-toggle]');
   await toggle.click();
   assert.equal(await toggle.getAttribute('aria-expanded'), 'true');
@@ -287,7 +287,7 @@ await check('About: green checks for what we do, red crosses for what we do not'
 });
 
 await check('Top ticker scrolls and its button pauses it', async () => {
-  await page.goto(base + '/fr/');
+  await page.goto(base + '/');
   const track = page.locator('.ticker__track');
   assert.notEqual(await track.evaluate((e) => getComputedStyle(e).animationName), 'none');
   await page.click('[data-ticker-toggle]');
@@ -298,7 +298,7 @@ await check('Top ticker scrolls and its button pauses it', async () => {
 const mobile = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 const m = await mobile.newPage();
 await check('Mobile menu opens, traps the page behind and closes with Escape', async () => {
-  await m.goto(base + '/fr/');
+  await m.goto(base + '/');
   const btn = m.locator('[data-menu-toggle]');
   await btn.click();
   assert.equal(await btn.getAttribute('aria-expanded'), 'true');
@@ -322,7 +322,7 @@ await check('Mobile: language switch is visible at the top and in the menu', asy
 });
 
 await check('Mobile: no horizontal overflow on key pages', async () => {
-  for (const p of ['/fr/', '/en/', '/es/', '/fr/contact/', '/es/contacto/', '/fr/services/visa-fiance-etats-unis/', '/es/servicios/visa-colombia/', '/fr/a-propos/', '/es/sobre-nosotros/', '/en/resources/', '/es/testimonios/']) {
+  for (const p of ['/', '/en/', '/es/', '/fr/contact/', '/es/contacto/', '/fr/services/visa-fiance-etats-unis/', '/es/servicios/visa-colombia/', '/fr/a-propos/', '/es/sobre-nosotros/', '/en/resources/', '/es/testimonios/']) {
     await m.goto(base + p);
     // body has overflow-x: hidden, which iOS Safari ignores when zooming out: measure without it.
     await m.addStyleTag({ content: 'html, body { overflow-x: visible !important; }' });
@@ -345,7 +345,7 @@ await check('Browser language: Spanish visitor on a French page is offered the S
   assert.equal(await bar.isVisible(), false);
   assert.ok((await es.cookies()).some((c) => c.name === 'nf_lang' && c.value === 'fr'));
 });
-await check('Root answers 200 with the language gate and never redirects', async () => {
+await check('Root is the French homepage itself and never redirects', async () => {
   // A Spanish browser carrying a French cookie: either signal used to redirect the root away.
   await es.clearCookies();
   await es.addCookies([{ name: 'nf_lang', value: 'fr', url: base }]);
@@ -353,21 +353,37 @@ await check('Root answers 200 with the language gate and never redirects', async
   assert.equal(res.status(), 200);
   await e.waitForTimeout(400);
   assert.equal(new URL(e.url()).pathname, '/', 'the root redirected');
-  assert.match(await e.locator('h1').innerText(), /Fernando OMG Services/);
+  assert.equal(await e.locator('html').getAttribute('lang'), 'fr');
   assert.ok((await e.locator('link[rel="canonical"]').getAttribute('href')).endsWith('/'), 'canonical is not the root');
-  for (const l of ['fr', 'en', 'es']) {
-    assert.equal(await e.locator(`.gate__langs a[href="/${l}/"]`).count(), 1, `no link to /${l}/`);
-  }
-  // The visitor's own language is marked as a hint only.
-  assert.equal(await e.locator('.gate__langs li.is-suggested a[hreflang="fr"]').count(), 1);
+  // The real site, not a stub: header, footer and the French hero.
+  assert.ok(await e.locator('.site-header').isVisible());
+  assert.ok(await e.locator('.site-footer').count());
+  assert.match(await e.locator('main h1').innerText(), /démarches/i);
 });
 
-await check('Root language links reach each version', async () => {
-  for (const l of ['fr', 'en', 'es']) {
-    await e.goto(base + '/');
-    await e.click(`.gate__langs a[href="/${l}/"]`);
-    await e.waitForURL(new RegExp(`/${l}/$`), { timeout: 5000 });
-    assert.equal(await e.locator('html').getAttribute('lang'), l);
+await check('Root offers the visitor their own language without forcing it', async () => {
+  // Spanish browser, no prior choice: the bar appears, the page stays French at /.
+  // An earlier check dismissed the bar, which is remembered for the visit in sessionStorage,
+  // so clear that as well to act like a first-time visitor.
+  await es.clearCookies();
+  await e.goto(base + '/');
+  await e.evaluate(() => sessionStorage.clear());
+  await e.reload();
+  assert.equal(new URL(e.url()).pathname, '/');
+  const bar = e.locator('[data-lang-suggest]');
+  assert.ok(await bar.isVisible(), 'no language offer on the root');
+  assert.equal(await bar.locator('[data-lang-suggest-go]').getAttribute('href'), '/es/');
+  await bar.locator('[data-lang-suggest-go]').click();
+  await e.waitForURL(/\/es\/$/, { timeout: 5000 });
+  assert.equal(await e.locator('html').getAttribute('lang'), 'es');
+});
+
+await check('Language switch moves between the three homepages', async () => {
+  await es.clearCookies();
+  for (const [from, l, expected] of [['/', 'en', '/en/'], ['/en/', 'es', '/es/'], ['/es/', 'fr', '/']]) {
+    await e.goto(base + from);
+    const link = e.locator(`.utility .langs a[hreflang="${l}"]`).first();
+    assert.equal(await link.getAttribute('href'), expected, `${from}: switch to ${l}`);
   }
 });
 

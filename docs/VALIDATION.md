@@ -8,7 +8,7 @@
 | `npx astro check` | ✅ 0 errors, 0 warnings |
 | `npm test` | ✅ 10/10 (adds the Spanish WhatsApp message) |
 | `tests/audit-build.mjs` | ✅ 96 pages: fr/en/es/x-default hreflang reciprocal, `notranslate` on every page, no interface text from another language on any page, plus all earlier checks |
-| `tests/e2e.mjs` (local preview) | ✅ 32/32 (16 Nov 2026: + the root answers 200 with the language gate and never redirects, + its three links reach each version). Previously 31/31. New: three-language switch (desktop, mobile bar, mobile menu), Spanish `lang`/hreflang/title, Spanish WhatsApp message, floating WhatsApp button opens the form with the service preselected, Colombia page shows 3 TikTok videos + @foscolombia, hero lists 6 flagged destinations, headline in one colour, green/red marks on About, ticker pauses, Spanish browser on a French page is offered (not forced to) Spanish, root opens the browser language, no horizontal overflow at 390px on 11 pages incl. Spanish ones |
+| `tests/e2e.mjs` (local preview) | ✅ 33/33 (16 Nov 2026: + the root is the French homepage and never redirects, + it offers the visitor’s own language without forcing it, + the switch moves between the three homepages). Previously 31/31. New: three-language switch (desktop, mobile bar, mobile menu), Spanish `lang`/hreflang/title, Spanish WhatsApp message, floating WhatsApp button opens the form with the service preselected, Colombia page shows 3 TikTok videos + @foscolombia, hero lists 6 flagged destinations, headline in one colour, green/red marks on About, ticker pauses, Spanish browser on a French page is offered (not forced to) Spanish, root opens the browser language, no horizontal overflow at 390px on 11 pages incl. Spanish ones |
 | Lighthouse 13.5 mobile (local) | Accessibility 100 and Best practices 100 on `/fr/`, `/es/`, `/es/servicios/visa-colombia/`; SEO 69 = only the intended noindex. Performance scores were depressed on this machine at the time (the **unchanged live round-2 site** scored 66 in the same session vs 97 on 18 Oct); the new build measured within noise of it (TBT 1.75 s vs 1.61 s). Re-measure on an idle machine or with PageSpeed Insights after launch. |
 | Visual review | 360, 390 and 1440px: home hero (FR/ES), mobile menu, globe band, Colombia hero and videos, About do/don't. Fixed during review: WhatsApp button covering the hero on phones (now appears after the first screen), mobile-menu language buttons not filling the row, ticker space on 360px phones. |
 
@@ -23,7 +23,7 @@ Environment: Windows 10, Node 24.18, Astro 7.4.0, local Chrome (headless) via pl
 | Check | Result |
 |---|---|
 | `npx astro build` (draft) | ✅ 66 HTML files: 32 FR + 32 EN pages, root redirect, bilingual 404 |
-| `npm run build` (16 Nov 2026) | ✅ 98 pages: 96 language pages, the language gate at `/`, bilingual 404. Sitemap lists 97 URLs (96 + the root). |
+| `npm run build` (16 Nov 2026) | ✅ 97 pages: the French home at `/`, 95 other language pages, bilingual 404. Sitemap lists 96 URLs, one per indexable page. `/fr/` 301s to `/`. |
 | `npx astro check` | ✅ 0 errors, 0 warnings (1 hint: deprecated `execCommand`, kept intentionally as the copy fallback) |
 | Client JavaScript shipped | ~17 KB total (finder, menus, inquiry flow, office status) |
 | Launch build without `SITE_URL` | ✅ fails with a clear message |

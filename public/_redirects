@@ -1,7 +1,10 @@
 # The old review address now points to the public domain (keeps shared links working, one site for Google).
 https://fernando-omg-services.netlify.app/*  https://fosinternational.com/:splat  301!
 
-# The root is a real page now (src/pages/index.astro): it answers 200 to everyone and offers the
-# three language versions, so the bare domain can be crawled and indexed. It used to 302 here by
-# Accept-Language, which made Google file three homepage URLs as redirects instead of indexing one.
+# The French homepage is the bare domain, so the old /fr/ address folds into it. French inner
+# pages keep their /fr/... paths; only the homepage moved.
+/fr/  /  301!
+
+# Nothing redirects the root itself. / is a real page that answers 200 to everyone, whatever
+# their browser language or nf_lang cookie, so the bare domain can be crawled and indexed.
 # HTTP to HTTPS and www to the bare domain stay with Netlify, which handles both automatically.

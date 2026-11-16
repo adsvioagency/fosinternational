@@ -15,12 +15,14 @@ walk(dist);
 const rel = (p) => '/' + path.relative(dist, p).split(path.sep).join('/');
 const htmlFiles = files.filter((f) => f.endsWith('.html'));
 const LANGS = ['fr', 'en', 'es'];
-const pages = htmlFiles.filter((f) => /\/(fr|en|es)\//.test(rel(f)));
+// Every page that is meant to be indexed: the language folders plus the root, which is the
+// French homepage. Only the 404 is excluded.
+const pages = htmlFiles.filter((f) => /\/(fr|en|es)\//.test(rel(f)) || rel(f) === '/index.html');
 const problems = [];
 const warn = (m) => problems.push(m);
 
 const origin = (() => {
-  const html = readFileSync(path.join(dist, 'fr/index.html'), 'utf8');
+  const html = readFileSync(path.join(dist, 'index.html'), 'utf8');
   return new URL(html.match(/<link rel="canonical" href="([^"]+)"/)[1]).origin;
 })();
 
@@ -34,12 +36,13 @@ for (const f of pages) {
   const alts = Object.fromEntries([...html.matchAll(/<link rel="alternate" hreflang="([^"]+)" href="([^"]+)"/g)].map((m) => [m[1], m[2]]));
   pageInfo.set(urlPath, { html, lang, canonical, alts });
 
-  if (!urlPath.startsWith(`/${lang}/`)) warn(`${urlPath}: lang="${lang}" does not match path`);
+  const isRoot = urlPath === '/';
+  if (isRoot && lang !== 'fr') warn(`/: lang="${lang}", but the root is the French homepage`);
+  if (!isRoot && !urlPath.startsWith(`/${lang}/`)) warn(`${urlPath}: lang="${lang}" does not match path`);
   if (canonical !== origin + urlPath) warn(`${urlPath}: canonical ${canonical} is not self-referencing`);
   for (const k of [...LANGS, 'x-default']) if (!alts[k]) warn(`${urlPath}: missing hreflang ${k}`);
-  // The homepage cluster points x-default at the neutral root; every other cluster at French.
-  const wantXDefault = /^\/(fr|en|es)\/$/.test(urlPath) ? origin + '/' : alts.fr;
-  if (alts['x-default'] !== wantXDefault) warn(`${urlPath}: x-default is ${alts['x-default']}, expected ${wantXDefault}`);
+  // x-default is always the French version, which for the homepage is the bare domain.
+  if (alts['x-default'] !== alts.fr) warn(`${urlPath}: x-default is ${alts['x-default']}, expected the French version ${alts.fr}`);
   if (!html.includes('<meta name="google" content="notranslate"')) warn(`${urlPath}: missing notranslate meta`);
   if (alts[lang] !== canonical) warn(`${urlPath}: hreflang self-reference mismatch`);
   const h1s = html.match(/<h1[\s>]/g)?.length ?? 0;
@@ -85,26 +88,23 @@ for (const [p, info] of pageInfo) {
   }
 }
 
-// The root: one indexable, language-neutral page, the x-default of the homepage cluster.
+// The root. It is the French homepage, so the loop above already checked its canonical, hreflang,
+// title, headings and links. What is left is what makes it the site's front door: it must answer
+// with content rather than send the visitor somewhere, and it must carry the brand's identity.
 const rootFile = path.join(dist, 'index.html');
 let rootHtml = '';
 if (!existsSync(rootFile)) {
   warn('No index.html at the site root');
 } else {
   rootHtml = readFileSync(rootFile, 'utf8');
-  const alts = Object.fromEntries([...rootHtml.matchAll(/<link rel="alternate" hreflang="([^"]+)" href="([^"]+)"/g)].map((m) => [m[1], m[2]]));
-  if (get(rootHtml, /<link rel="canonical" href="([^"]+)"/) !== origin + '/') warn('/: canonical is not the bare domain');
-  for (const l of LANGS) if (alts[l] !== origin + `/${l}/`) warn(`/: hreflang ${l} is ${alts[l]}`);
-  if (alts['x-default'] !== origin + '/') warn('/: x-default does not point at the root');
-  if (!/<title>[^<]{10,}<\/title>/.test(rootHtml)) warn('/: weak <title>');
-  if (!/<meta name="description" content="[^"]{50,}"/.test(rootHtml)) warn('/: weak meta description');
-  if ((rootHtml.match(/<h1[\s>]/g)?.length ?? 0) !== 1) warn('/: expected exactly one <h1>');
   if (!rootHtml.includes('<meta property="og:site_name"')) warn('/: missing og:site_name');
   if (!/<link rel="icon"[^>]+href="\/favicon\.png"/.test(rootHtml)) warn('/: does not declare /favicon.png');
-  // Direct, crawlable links to each language version, and no redirect of any kind.
-  for (const l of LANGS) if (!new RegExp(`href="/${l}/"`).test(rootHtml)) warn(`/: no direct link to /${l}/`);
-  if (/http-equiv="refresh"/i.test(rootHtml)) warn('/: still contains a meta refresh');
-  if (/location\.replace|location\.href\s*=/.test(rootHtml)) warn('/: still redirects in script');
+  // No redirect of any kind: this is what made the bare domain uncrawlable before.
+  if (/http-equiv="refresh"/i.test(rootHtml)) warn('/: contains a meta refresh');
+  if (/location\.replace|location\.href\s*=/.test(rootHtml)) warn('/: redirects in script');
+  // It must be the real homepage, not a stub: header, footer and the hero's calls to action.
+  if (!rootHtml.includes('site-header')) warn('/: no site header, so this is not the full homepage');
+  if (!rootHtml.includes('site-footer')) warn('/: no site footer, so this is not the full homepage');
   try {
     const graph = JSON.parse(rootHtml.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1])['@graph'];
     const site = graph.find((n) => n['@type'] === 'WebSite');
@@ -117,10 +117,15 @@ if (!existsSync(rootFile)) {
   } catch (e) {
     warn(`/: JSON-LD does not parse (${e.message})`);
   }
-  for (const m of rootHtml.matchAll(/(?:href|src)="(\/[^"#?]*)[^"]*"/g)) {
-    const candidates = [path.join(dist, m[1]), path.join(dist, m[1], 'index.html')];
-    if (!candidates.some((c) => existsSync(c) && statSync(c).isFile())) warn(`/: broken internal link ${m[1]}`);
-  }
+}
+
+// The French homepage lives at the root, so /fr/ must not also be built: two URLs with the same
+// page would compete. public/_redirects folds the old address into the root with a 301.
+if (existsSync(path.join(dist, 'fr', 'index.html'))) warn('/fr/ is still built; it should redirect to the root');
+{
+  const redirects = readFileSync(path.join(dist, '_redirects'), 'utf8');
+  if (!/^\/fr\/\s+\/\s+301!?$/m.test(redirects)) warn('_redirects does not send /fr/ to the root');
+  if (/^\/\s+\/(fr|en|es)\//m.test(redirects)) warn('_redirects sends the root somewhere; it must answer 200');
 }
 
 // Assets referenced from the bundled CSS (fonts above all) must exist. A stylesheet pulled in with
@@ -157,9 +162,9 @@ for (const f of files.filter((x) => x.endsWith('.css'))) {
     const locs = [...readFileSync(child, 'utf8').matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
     if (!locs.includes(origin + '/')) warn('sitemap does not list the root');
     for (const [urlPath] of pageInfo) if (!locs.includes(origin + urlPath)) warn(`sitemap is missing ${urlPath}`);
-    if (locs.length !== pageInfo.size + 1) warn(`sitemap lists ${locs.length} URLs for ${pageInfo.size} pages plus the root`);
+    if (locs.length !== pageInfo.size) warn(`sitemap lists ${locs.length} URLs for ${pageInfo.size} built pages`);
     if (locs.some((u) => /\/404\//.test(u))) warn('sitemap lists the 404 page');
-    console.log(`Sitemap: ${locs.length} URLs (${pageInfo.size} language pages + the root).`);
+    console.log(`Sitemap: ${locs.length} URLs, one per built page (the root is the French homepage).`);
   }
 }
 
@@ -208,9 +213,7 @@ const noindexCount = pages.filter((f) => readFileSync(f, 'utf8').includes('name=
 console.log(`Build mode: ${draft ? 'draft (noindex)' : 'launch (indexable)'}; origin ${origin}`);
 if (draft && noindexCount !== pages.length) warn(`Draft build but only ${noindexCount}/${pages.length} pages are noindex`);
 if (!draft && noindexCount > 0) warn(`Launch build still has ${noindexCount} noindex pages`);
-const rootNoindex = rootHtml.includes('name="robots" content="noindex');
-if (draft && !rootNoindex) warn('Draft build but the root is not noindex');
-if (!draft && rootNoindex) warn('Launch build but the root is noindex');
+
 
 // Rough content length per service/resource page (main column text).
 const lengths = [];

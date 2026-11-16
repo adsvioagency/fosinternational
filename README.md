@@ -12,7 +12,7 @@ Requires Node 22.22+ (developed on Node 24).
 
 ```bash
 npm install
-npm run dev        # http://localhost:4321  (/ is the language gate; /fr/, /en/, /es/ are the versions)
+npm run dev        # http://localhost:4321  (/ is the French home; /en/ and /es/ are the other versions)
 npm run build      # static site in dist/
 npm run preview    # serve dist/ locally
 ```
@@ -30,13 +30,15 @@ npx astro check                  # type check
 
 On Git Bash for Windows, prefix commands that pass `/fr/`-style paths with `MSYS_NO_PATHCONV=1`.
 
-## The root, and why it is not a redirect
+## The root is the French homepage
 
-`/` is a real page (`src/pages/index.astro`): a short branded gate that answers **200 to everyone**, whatever their browser language or `nf_lang` cookie, and links straight to `/fr/`, `/en/` and `/es/`. It belongs to no language, so it is the homepage cluster's `hreflang="x-default"` and it carries the `WebSite` structured data for the brand.
+`/` **is** the French homepage — the full site, not a chooser and not a redirect. Someone who types the domain lands on the real thing straight away, in the primary language. `/fr/` folds into it with a 301 (`public/_redirects`); French inner pages keep their `/fr/…` paths, so only the homepage moved. English and Spanish homepages stay at `/en/` and `/es/`.
 
-It used to be a 302 to the visitor's language. That left the bare domain uncrawlable: Search Console filed three homepage URLs as redirects, the site had no indexable front door, and Google had no home page to read a favicon from. Anything that turns `/` back into a redirect — a host rule, a meta refresh, a script — undoes that. `tests/audit-build.mjs` fails the build if it finds one.
+This is set in one place: `pathFor('home', 'fr')` returns `/`. Every link, canonical, hreflang, breadcrumb and sitemap entry reads from the route table, so nothing else needs to know.
 
-The browser's own language is still honoured, as a hint: a small script marks the matching link after load. It never navigates, so every crawler and every visitor receives identical markup.
+**`/` must answer 200 to everyone**, whatever their browser language or `nf_lang` cookie. It used to be a 302 to the visitor's language, which left the bare domain uncrawlable: Search Console filed three homepage URLs as redirects, the site had no indexable front door, and Google had no home page to read a favicon from. Anything that turns `/` back into a redirect — a host rule, a meta refresh, a script — undoes that, and `tests/audit-build.mjs` fails the build if it finds one.
+
+A visitor whose browser prefers English or Spanish is **offered** their language instead: the dismissible bar at the top of every page, written in the target language. It never navigates on its own, so every visitor and every crawler receives the same markup.
 
 ## Configuration and launch switch
 
@@ -69,7 +71,7 @@ The output in `dist/` is static and works on any static host (Netlify, Cloudflar
 
 1. Choose the final domain and an owner-controlled hosting account.
 2. Set the build command `npm run build`, the output directory `dist`, and the environment `SITE_URL=<domain>` and `INDEXING=true` (production only; keep previews without `INDEXING`).
-3. Serve `/` as a page, not a redirect: `dist/index.html` is the language gate and must answer `200` to everyone. No host rule should rewrite or redirect `/`. Visitors are only *offered* their browser language, never sent there: the gate marks it, and inner pages show a dismissible bar.
+3. Serve `/` as a page, not a redirect: `dist/index.html` is the French homepage and must answer `200` to everyone. No host rule should rewrite or redirect `/`. Keep the `/fr/ → /` 301 in `public/_redirects`. Visitors are only *offered* their browser language, never sent there (the dismissible bar).
 4. Keep trailing slashes (`/fr/contact/`), which is the site's canonical form.
 5. After launch, submit `sitemap-index.xml` in Google Search Console (owner account).
 6. Update `docs/PENDING-CONFIRMATIONS.md` items (hosting provider for the legal page, approvals) before going live.
@@ -79,7 +81,7 @@ The output in `dist/` is static and works on any static host (Netlify, Cloudflar
 | What | File |
 |---|---|
 | Phone, WhatsApp, email, address, landmark, hours, social links | `src/config/business.ts` (single source of truth) |
-| The language gate at `/` (the site’s front door) | `src/pages/index.astro` |
+| The homepage (served at `/`, the site’s front door) | `src/views/HomePage.astro` |
 | Interface text, navigation, form labels, About copy, notices | `src/i18n/ui.ts` |
 | URLs / localized slugs / page IDs | `src/i18n/routes.ts` (slugs for services and guides live in their content entries) |
 | Services (17 pages) | `src/content/services/us.ts`, `documents.ts`, `dominican.ts`, `travel.ts` (FR + EN); Spanish in `src/content/es/services.ts` |
@@ -109,7 +111,7 @@ src/
   scripts/     inquiry.ts (form behaviour)
   components/  Header (ticker), LangSwitch, WhatsAppFab, Globe, Flag, Footer, InquiryForm/Dialog, ServiceFinder, OfficeInfo, …
   views/       one file per page type
-  pages/       [...path].astro (all localized pages), 404.astro, index.astro (the language gate at /), robots.txt.ts
+  pages/       [...path].astro (every page, including / which is the French home), 404.astro, robots.txt.ts
 scripts/       prepare-images.mjs · prepare-flags.mjs · capture-video-covers.mjs · screenshots.mjs · slice.mjs
 tests/         whatsapp.test.ts · e2e.mjs · audit-build.mjs
 docs/          design system, SEO map, source log, asset manifest, pending list, validation results

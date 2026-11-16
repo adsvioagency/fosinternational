@@ -41,6 +41,9 @@ export function pathFor(pageId: PageId, lang: Lang): string {
     if (!res) throw new Error(`Unknown resource page ${pageId}`);
     return join(lang, staticSlugs.resources[lang], res[lang].slug);
   }
+  // The French homepage IS the bare domain: someone opening fosinternational.com lands on the
+  // site in the primary language instead of a chooser. /fr/ redirects here (public/_redirects).
+  if (pageId === 'home' && lang === defaultLang) return rootPath;
   return join(lang, staticSlugs[pageId as StaticPageId][lang]);
 }
 
@@ -50,29 +53,24 @@ export const allPageIds = (): PageId[] => [
   ...resources.map((r) => `resource:${r.id}` as PageId),
 ];
 
-/** The language-neutral landing page. It belongs to no language, so it is the homepage cluster's x-default. */
+/** The bare domain. It serves the French homepage, the primary editorial version. */
 export const rootPath = '/';
 
 /** The same page in every language, e.g. { fr: '/fr/a-propos/', en: '/en/about/', es: '/es/sobre-nosotros/' }. */
 export const alternatesFor = (pageId: PageId) =>
   Object.fromEntries(langs.map((l) => [l, pathFor(pageId, l)])) as Record<Lang, string>;
 
-/**
- * Where hreflang="x-default" points. The homepage cluster sends it to the neutral root, which lets
- * visitors choose; every other page falls back to French, the primary editorial version.
- */
-export const xDefaultFor = (pageId: PageId) => (pageId === 'home' ? rootPath : pathFor(pageId, defaultLang));
+/** Where hreflang="x-default" points: the French version, which for the homepage is the bare domain. */
+export const xDefaultFor = (pageId: PageId) => pathFor(pageId, defaultLang);
 
 export type Alternates = Record<Lang, string> & { xDefault: string };
 
-/** Map of every indexable path → its alternates, used by the sitemap. Includes the root. */
+/** Map of every indexable path → its alternates, used by the sitemap. The root is the French home. */
 export function alternatesByPath(): Map<string, Alternates> {
   const map = new Map<string, Alternates>();
   for (const id of allPageIds()) {
     const alt: Alternates = { ...alternatesFor(id), xDefault: xDefaultFor(id) };
     for (const l of langs) map.set(alt[l], alt);
-    // The root shares the homepage's alternates, so all four URLs declare the same set.
-    if (id === 'home') map.set(rootPath, alt);
   }
   return map;
 }
